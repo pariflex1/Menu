@@ -7,7 +7,12 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip static assets and image optimizer — they don't need auth refresh.
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+     * Match ONLY admin routes that require auth session updates.
+     * Public customer routes (/menu, /order, /checkout, /api/menu, /api/orders, /)
+     * bypass middleware to load with maximum speed.
+     */
+    '/dashboard/:path*',
+    '/api/admin/:path*',
   ],
 };

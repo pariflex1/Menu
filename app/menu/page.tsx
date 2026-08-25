@@ -584,7 +584,7 @@ export default function MenuPage() {
   const isMenuMode = viewMode === 'all_menu' || !!searchQuery.trim();
 
   return (
-    <div className="customer-page min-h-dvh bg-[#F7F9F8] pb-36">
+    <div className="customer-page min-h-dvh bg-[#F7F9F8] pb-20">
       {/* ─── STICKY PWA INSTALL BANNER AT VERY TOP ─── */}
       <PwaInstallBanner />
 

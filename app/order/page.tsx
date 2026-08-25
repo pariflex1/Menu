@@ -36,7 +36,7 @@ export default function OrderStatusSearchPage() {
   };
 
   return (
-    <div className="customer-page min-h-dvh bg-[#F7F9F8] pb-32">
+    <div className="customer-page min-h-dvh bg-[#F7F9F8] pb-20">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-4 py-3.5 border-b border-gray-100 shadow-2xs flex items-center justify-between">
         <div className="flex items-center gap-3">

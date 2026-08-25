@@ -45,16 +45,16 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
   };
 
   return (
-    <div className="fixed bottom-3 left-0 right-0 z-40 px-3 pb-safe pointer-events-none">
-      <div className="max-w-[460px] mx-auto pointer-events-auto space-y-2">
+    <div className="fixed bottom-0 left-0 right-0 z-40 px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1 bg-gradient-to-t from-white/90 via-white/70 to-transparent pointer-events-none">
+      <div className="max-w-[460px] mx-auto pointer-events-auto space-y-1.5">
         {/* Floating Quick Basket Bar (Shown when items exist and not on checkout) */}
         {totalItemCount > 0 && currentTab !== 'basket' && (
           <button
             onClick={() => router.push('/checkout')}
-            className="slide-up w-full bg-[#00B14F] hover:bg-[#009b45] active:bg-[#00863c] text-white rounded-2xl flex items-center justify-between px-4 py-3 transition-all press-scale shadow-lg shadow-[#00B14F]/25 border border-emerald-400/30 cursor-pointer"
+            className="slide-up w-full bg-[#00B14F] hover:bg-[#009b45] active:bg-[#00863c] text-white rounded-xl flex items-center justify-between px-3.5 py-2.5 transition-all press-scale shadow-md shadow-[#00B14F]/20 border border-emerald-400/30 cursor-pointer"
           >
-            <div className="flex items-center gap-2.5">
-              <span className="bg-white/20 w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs">
+            <div className="flex items-center gap-2">
+              <span className="bg-white/20 w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs">
                 {totalItemCount}
               </span>
               <div className="text-left">
@@ -65,8 +65,8 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-sm">₹{total.toFixed(0)}</span>
-              <span className="text-xs bg-white text-[#00B14F] font-black px-3 py-1 rounded-full shadow-xs flex items-center gap-1">
+              <span className="font-black text-xs">₹{total.toFixed(0)}</span>
+              <span className="text-[11px] bg-white text-[#00B14F] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
                 View Basket ›
               </span>
             </div>
@@ -76,7 +76,7 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
         {/* 4-Tab Bottom Navigation Dock */}
         <nav
           aria-label="Bottom Navigation"
-          className="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-2xl shadow-xl shadow-black/8 p-1.5 flex items-center justify-around gap-1"
+          className="bg-white/95 backdrop-blur-md border border-gray-200/90 rounded-2xl shadow-lg shadow-black/8 p-1 flex items-center justify-around gap-1"
         >
           {/* Tab 1: Home (Front Page) */}
           <Link
@@ -111,7 +111,7 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
             href={latestOrderId ? `/order/${latestOrderId}` : '/order'}
             onClick={(e) => {
               if (onSelectTab && latestOrderId) {
-                // If on menu page and clicking status, let standard navigation happen
+                // let standard navigation proceed
               }
             }}
             className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all press-scale flex-1 text-center relative ${

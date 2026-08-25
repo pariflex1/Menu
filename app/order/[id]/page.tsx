@@ -189,7 +189,7 @@ export default function OrderTrackingPage() {
       : 'Dine-In';
 
   return (
-    <div className="min-h-dvh bg-[#F4F9F4] pb-24 font-sans">
+    <div className="min-h-dvh bg-[#F4F9F4] pb-20 font-sans">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-emerald-100 shadow-2xs">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
