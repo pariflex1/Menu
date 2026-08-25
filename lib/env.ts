@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
 const clientEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  NEXT_PUBLIC_SITE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().default('https://mjgneisuyrlvvcjtdaaz.supabase.co'),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).default('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgxNTQsImV4cCI6MjEwMjI4NDE1NH0.mewZu8lT1EZ98SQORL2Cy0tpH719IaHvqKiv-Oy1FbI'),
+  NEXT_PUBLIC_SITE_URL: z.string().url().default('https://menu.krishnaanandam.in'),
 });
 
 const serverEnvSchema = clientEnvSchema.extend({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).default('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjcwODE1NCwiZXhwIjoyMTAyMjg0MTU0fQ.0DfWYxbgxmwrzBF58RXP6vxrJqrQyvfXzJ8OtnkGslc'),
   PAYMENT_SECRET_KEY: z.string().optional().default(''),
   PAYMENT_WEBHOOK_SECRET: z.string().optional().default(''),
 });
@@ -15,24 +15,19 @@ const serverEnvSchema = clientEnvSchema.extend({
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
-// Parse on import — fail fast at boot if env is malformed.
-// Lazy parse: env is read on first call, not at module load, so Next.js
-// can still type-check without .env.local populated.
 let cachedClient: ClientEnv | null = null;
 let cachedServer: ServerEnv | null = null;
 
 function readEnv(): NodeJS.ProcessEnv {
-  // process.env is populated by Next.js; this helper exists so we have one
-  // place to add fallback behaviour (e.g. .env.local on the server during build).
   return process.env;
 }
 
 export function getClientEnv(): ClientEnv {
   if (cachedClient) return cachedClient;
   const parsed = clientEnvSchema.safeParse({
-    NEXT_PUBLIC_SUPABASE_URL: readEnv().NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: readEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_SITE_URL: readEnv().NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_SUPABASE_URL: readEnv().NEXT_PUBLIC_SUPABASE_URL || 'https://mjgneisuyrlvvcjtdaaz.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: readEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgxNTQsImV4cCI6MjEwMjI4NDE1NH0.mewZu8lT1EZ98SQORL2Cy0tpH719IaHvqKiv-Oy1FbI',
+    NEXT_PUBLIC_SITE_URL: readEnv().NEXT_PUBLIC_SITE_URL || 'https://menu.krishnaanandam.in',
   });
   if (!parsed.success) {
     const issues = parsed.error.issues
@@ -50,10 +45,10 @@ export function getClientEnv(): ClientEnv {
 export function getServerEnv(): ServerEnv {
   if (cachedServer) return cachedServer;
   const parsed = serverEnvSchema.safeParse({
-    NEXT_PUBLIC_SUPABASE_URL: readEnv().NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: readEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_SITE_URL: readEnv().NEXT_PUBLIC_SITE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: readEnv().SUPABASE_SERVICE_ROLE_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: readEnv().NEXT_PUBLIC_SUPABASE_URL || 'https://mjgneisuyrlvvcjtdaaz.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: readEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgxNTQsImV4cCI6MjEwMjI4NDE1NH0.mewZu8lT1EZ98SQORL2Cy0tpH719IaHvqKiv-Oy1FbI',
+    NEXT_PUBLIC_SITE_URL: readEnv().NEXT_PUBLIC_SITE_URL || 'https://menu.krishnaanandam.in',
+    SUPABASE_SERVICE_ROLE_KEY: readEnv().SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjcwODE1NCwiZXhwIjoyMTAyMjg0MTU0fQ.0DfWYxbgxmwrzBF58RXP6vxrJqrQyvfXzJ8OtnkGslc',
     PAYMENT_SECRET_KEY: readEnv().PAYMENT_SECRET_KEY,
     PAYMENT_WEBHOOK_SECRET: readEnv().PAYMENT_WEBHOOK_SECRET,
   });

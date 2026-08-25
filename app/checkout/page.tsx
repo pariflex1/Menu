@@ -178,6 +178,18 @@ export default function CheckoutPage() {
         return;
       }
 
+      try {
+        localStorage.setItem('latest_order_id', data.order.id);
+        const recents = localStorage.getItem('recent_orders');
+        const parsedRecents = recents ? JSON.parse(recents) : [];
+        if (!parsedRecents.includes(data.order.id)) {
+          parsedRecents.unshift(data.order.id);
+          localStorage.setItem('recent_orders', JSON.stringify(parsedRecents.slice(0, 10)));
+        }
+      } catch {
+        // ignore storage errors
+      }
+
       clearBucket();
       router.push(`/order/${data.order.id}`);
     } catch (err) {

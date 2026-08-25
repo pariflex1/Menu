@@ -98,6 +98,8 @@ const STATUS_DETAILS: Record<string, { title: string; subtitle: string; icon: st
   },
 };
 
+import BottomNav from '@/components/bottom-nav';
+
 export default function OrderTrackingPage() {
   const params = useParams();
   const orderId = params.id as string;
@@ -119,6 +121,18 @@ export default function OrderTrackingPage() {
 
         setOrder(data.order);
         setLastRefreshed(new Date());
+
+        try {
+          localStorage.setItem('latest_order_id', data.order.id);
+          const recents = localStorage.getItem('recent_orders');
+          const parsedRecents = recents ? JSON.parse(recents) : [];
+          if (!parsedRecents.includes(data.order.id)) {
+            parsedRecents.unshift(data.order.id);
+            localStorage.setItem('recent_orders', JSON.stringify(parsedRecents.slice(0, 10)));
+          }
+        } catch {
+          // ignore localStorage error
+        }
       } catch {
         setError('Failed to load order');
       } finally {
@@ -342,7 +356,7 @@ export default function OrderTrackingPage() {
         </div>
 
         {/* Action Button */}
-        <div className="pt-2">
+        <div className="pt-2 pb-6">
           <Link
             href="/menu"
             className="block text-center w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all"
@@ -351,6 +365,8 @@ export default function OrderTrackingPage() {
           </Link>
         </div>
       </main>
+
+      <BottomNav activeTab="status" />
     </div>
   );
 }
