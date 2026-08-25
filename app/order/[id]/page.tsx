@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import BottomNav from '@/components/bottom-nav';
+import { createClient } from '@/lib/supabase/client';
 
 interface OrderItem {
   item_name: string;
@@ -13,7 +15,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
-  order_number: number;
+  order_number: string | number;
   status: string;
   order_type: string;
   subtotal: number;
@@ -86,9 +88,9 @@ const STATUS_DETAILS: Record<string, { title: string; subtitle: string; icon: st
   },
   completed: {
     title: 'Order Completed',
-    subtitle: 'Thank you for visiting Krishna Anandam, Vrindavan!',
+    subtitle: 'Thank you for dining with Krishna Anandam, Vrindavan!',
     icon: '✨',
-    badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
+    badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
   },
   cancelled: {
     title: 'Order Cancelled',
@@ -96,9 +98,13 @@ const STATUS_DETAILS: Record<string, { title: string; subtitle: string; icon: st
     icon: '❌',
     badgeBg: 'bg-red-50 text-red-700 border-red-200',
   },
+  rejected: {
+    title: 'Order Not Accepted',
+    subtitle: 'Kitchen was unable to accept this order. Please check with staff.',
+    icon: '❌',
+    badgeBg: 'bg-red-50 text-red-700 border-red-200',
+  },
 };
-
-import BottomNav from '@/components/bottom-nav';
 
 export default function OrderTrackingPage() {
   const params = useParams();
@@ -108,46 +114,87 @@ export default function OrderTrackingPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  useEffect(() => {
-    async function fetchOrder() {
-      try {
-        const res = await fetch(`/api/orders/${orderId}`);
-        const data = await res.json();
+  const fetchOrder = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      const data = await res.json();
 
-        if (!res.ok || !data.order) {
+      if (!res.ok || !data.order) {
+        if (!order) {
           setError('Order not found');
-          return;
         }
+        return;
+      }
 
-        setOrder(data.order);
-        setLastRefreshed(new Date());
+      setOrder(data.order);
+      setLastRefreshed(new Date());
 
-        try {
-          localStorage.setItem('latest_order_id', data.order.id);
-          const recents = localStorage.getItem('recent_orders');
-          const parsedRecents = recents ? JSON.parse(recents) : [];
-          if (!parsedRecents.includes(data.order.id)) {
-            parsedRecents.unshift(data.order.id);
-            localStorage.setItem('recent_orders', JSON.stringify(parsedRecents.slice(0, 10)));
-          }
-        } catch {
-          // ignore localStorage error
+      try {
+        localStorage.setItem('latest_order_id', data.order.id);
+        const recents = localStorage.getItem('recent_orders');
+        const parsedRecents = recents ? JSON.parse(recents) : [];
+        if (!parsedRecents.includes(data.order.id)) {
+          parsedRecents.unshift(data.order.id);
+          localStorage.setItem('recent_orders', JSON.stringify(parsedRecents.slice(0, 10)));
         }
       } catch {
-        setError('Failed to load order');
-      } finally {
-        setLoading(false);
+        // ignore localStorage error
       }
+    } catch {
+      if (!order) {
+        setError('Failed to load order');
+      }
+    } finally {
+      setLoading(false);
     }
+  }, [orderId, order]);
 
+  useEffect(() => {
     fetchOrder();
 
-    // Auto-poll live order status every 3 seconds
-    const interval = setInterval(fetchOrder, 3000);
-    return () => clearInterval(interval);
-  }, [orderId]);
+    // 1. High-frequency live polling every 2.5s with cache-busting
+    const interval = setInterval(fetchOrder, 2500);
 
-  if (loading) {
+    // 2. Supabase Realtime channel for instant push updates
+    let channel: any = null;
+    try {
+      const supabase = createClient();
+      channel = supabase
+        .channel(`order-live-${orderId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+            filter: `id=eq.${orderId}`,
+          },
+          () => {
+            fetchOrder();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.error('Realtime subscription failed, falling back to polling:', e);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (channel) {
+        try {
+          const supabase = createClient();
+          supabase.removeChannel(channel);
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [orderId, fetchOrder]);
+
+  if (loading && !order) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F4F9F4] px-4 font-sans">
         <div className="text-center space-y-3">
@@ -175,7 +222,8 @@ export default function OrderTrackingPage() {
     );
   }
 
-  const isCancelled = order.status === 'cancelled';
+  const isCancelled = order.status === 'cancelled' || order.status === 'rejected';
+  const isCompleted = order.status === 'completed';
   const currentStep = getStepIndex(order.status);
   const info = STATUS_DETAILS[order.status] || STATUS_DETAILS.new;
 
@@ -193,10 +241,13 @@ export default function OrderTrackingPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-emerald-100 shadow-2xs">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-xs">
-              KA
-            </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/menu"
+              className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-black text-sm hover:bg-slate-200 transition-colors"
+            >
+              ‹
+            </Link>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-black text-slate-900">Order #{order.order_number}</span>
@@ -242,9 +293,16 @@ export default function OrderTrackingPage() {
         {/* 4-Step Animated Progress Stepper */}
         {!isCancelled && (
           <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm space-y-3">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-900 border-b border-slate-100 pb-2">
-              Order Progress
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-900">
+                Order Progress
+              </h3>
+              {isCompleted && (
+                <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                  ✓ COMPLETED
+                </span>
+              )}
+            </div>
 
             <div className="grid grid-cols-4 gap-1 text-center relative pt-2">
               {STEPS.map((step, idx) => {
@@ -282,35 +340,27 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
-        {/* Booked Items List */}
+        {/* Itemized Order Breakdown */}
         <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-900">
-              Booked Dishes ({order.order_items?.length || 0})
-            </h3>
-            <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
-              Pure Veg
-            </span>
-          </div>
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2">
+            Dishes Ordered ({order.order_items?.length || 0})
+          </h3>
 
-          <div className="divide-y divide-slate-100 space-y-1">
-            {order.order_items?.map((item, idx) => (
-              <div key={idx} className="pt-2 flex items-center justify-between text-xs">
+          <div className="space-y-2">
+            {(order.order_items || []).map((item, idx) => (
+              <div key={idx} className="flex justify-between items-center text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-emerald-800 bg-emerald-50 border border-emerald-200 w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[10px]">
-                    {item.quantity}
+                  <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                    {item.quantity}x
                   </span>
                   <span className="font-bold text-slate-800">{item.item_name}</span>
                 </div>
-                <span className="font-extrabold text-slate-900">
-                  ₹{Number(item.total_price || item.unit_price * item.quantity).toFixed(0)}
-                </span>
+                <span className="font-extrabold text-slate-900">₹{(item.total_price || item.unit_price * item.quantity).toFixed(0)}</span>
               </div>
             ))}
           </div>
 
-          {/* Bill summary */}
-          <div className="border-t border-slate-200 pt-2.5 mt-2 space-y-1 text-xs text-slate-600">
+          <div className="border-t border-slate-100 pt-3 space-y-1.5 text-xs text-slate-600">
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span className="font-bold text-slate-800">₹{order.subtotal.toFixed(0)}</span>

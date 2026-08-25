@@ -3,16 +3,19 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { requireStaffApi } from '@/lib/auth/api-guards';
 import { orderStatusUpdateSchema } from '@/lib/validation/orders';
 
+export const dynamic = 'force-dynamic';
+
 const STATUS_TRANSITIONS: Record<string, string[]> = {
-  new: ['accepted', 'cancelled'],
-  accepted: ['preparing', 'cancelled'],
-  preparing: ['ready', 'cancelled'],
-  ready: ['served', 'out_for_delivery', 'cancelled'],
-  served: ['completed'],
-  out_for_delivery: ['delivered', 'cancelled'],
-  delivered: ['completed'],
-  completed: [],
-  cancelled: [],
+  new: ['accepted', 'preparing', 'ready', 'served', 'out_for_delivery', 'delivered', 'completed', 'cancelled', 'rejected'],
+  accepted: ['preparing', 'ready', 'served', 'out_for_delivery', 'delivered', 'completed', 'cancelled'],
+  preparing: ['ready', 'served', 'out_for_delivery', 'delivered', 'completed', 'cancelled'],
+  ready: ['served', 'out_for_delivery', 'delivered', 'completed', 'cancelled'],
+  served: ['completed', 'cancelled'],
+  out_for_delivery: ['delivered', 'completed', 'cancelled'],
+  delivered: ['completed', 'cancelled'],
+  completed: ['completed', 'cancelled', 'served'],
+  cancelled: ['new', 'accepted'],
+  rejected: [],
 };
 
 export async function PATCH(
@@ -51,7 +54,16 @@ export async function PATCH(
   }
 
   const currentStatus = order.status;
-  const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || [];
+  const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || [
+    'accepted',
+    'preparing',
+    'ready',
+    'served',
+    'out_for_delivery',
+    'delivered',
+    'completed',
+    'cancelled',
+  ];
 
   if (!allowedTransitions.includes(newStatus)) {
     return NextResponse.json(
@@ -60,9 +72,14 @@ export async function PATCH(
     );
   }
 
+  const updateData: Record<string, any> = {
+    status: newStatus,
+    updated_at: new Date().toISOString(),
+  };
+
   const { error: updateError } = await supabase
     .from('orders')
-    .update({ status: newStatus })
+    .update(updateData)
     .eq('id', orderId);
 
   if (updateError) {
@@ -80,5 +97,12 @@ export async function PATCH(
     console.error('Failed to create status history:', historyError);
   }
 
-  return NextResponse.json({ ok: true, status: newStatus });
+  return NextResponse.json(
+    { ok: true, status: newStatus },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    },
+  );
 }
