@@ -5,6 +5,7 @@ import { useBucket, setPriceCache } from '@/lib/hooks/use-bucket';
 import Image from 'next/image';
 import Link from 'next/link';
 import BottomNav, { NavTab } from '@/components/bottom-nav';
+import PwaInstallBanner from '@/components/pwa-install-banner';
 
 interface Addon {
   id: string;
@@ -180,6 +181,7 @@ function FoodForYouCard({
           src={imageSrc}
           alt={item.name}
           fill
+          loading="lazy"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="160px"
           unoptimized={imageSrc.startsWith('http')}
@@ -253,6 +255,7 @@ function HorizontalItemCard({
           src={imageSrc}
           alt={item.name}
           fill
+          loading="lazy"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="80px"
           unoptimized={imageSrc.startsWith('http')}
@@ -441,6 +444,8 @@ function DishDetailModal({
   );
 }
 
+const LOCAL_STORAGE_MENU_KEY = 'ka_menu_cache_v1';
+
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [restaurant, setRestaurant] = useState<RestaurantInfo | null>(null);
@@ -456,19 +461,45 @@ export default function MenuPage() {
 
   const categoryNavRef = useRef<HTMLDivElement>(null);
 
+  // Instant SWR Hydration: read from localStorage immediately, then fetch in background
   useEffect(() => {
+    // 1. Read instant local cache
+    try {
+      const cached = localStorage.getItem(LOCAL_STORAGE_MENU_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.categories && parsed.categories.length > 0) {
+          setCategories(parsed.categories);
+          if (parsed.restaurant) setRestaurant(parsed.restaurant);
+          setLoading(false); // Instant 0ms render!
+        }
+      }
+    } catch {
+      // Ignore cache parse error
+    }
+
+    // 2. Fetch in background (or immediate fetch if no cache)
     async function fetchMenu() {
       try {
         const res = await fetch('/api/menu');
         const data = await res.json();
         if (!res.ok || !data.categories) {
-          setError('Failed to load menu. Please try again.');
+          if (!categories.length) {
+            setError('Failed to load menu. Please try again.');
+          }
           return;
         }
         setCategories(data.categories);
         if (data.restaurant) setRestaurant(data.restaurant);
+        try {
+          localStorage.setItem(LOCAL_STORAGE_MENU_KEY, JSON.stringify(data));
+        } catch {
+          // Ignore quota error
+        }
       } catch {
-        setError('No internet connection.');
+        if (!categories.length) {
+          setError('No internet connection.');
+        }
       } finally {
         setLoading(false);
       }
@@ -531,7 +562,7 @@ export default function MenuPage() {
     })
     .filter((cat) => cat.items.length > 0);
 
-  if (error) {
+  if (error && !categories.length) {
     return (
       <div className="customer-page flex min-h-dvh flex-col items-center justify-center px-6 bg-white">
         <div className="text-center space-y-4">
@@ -554,6 +585,9 @@ export default function MenuPage() {
 
   return (
     <div className="customer-page min-h-dvh bg-[#F7F9F8] pb-36">
+      {/* ─── STICKY PWA INSTALL BANNER AT VERY TOP ─── */}
+      <PwaInstallBanner />
+
       {/* ─── STICKY HEADER & SEARCH BAR ─── */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-4 pt-3.5 pb-2.5 border-b border-gray-100 shadow-2xs">
         <div className="flex items-center gap-2.5">
@@ -644,7 +678,7 @@ export default function MenuPage() {
                   key={cat.id}
                   data-cat={cat.id}
                   onClick={() => handleJumpToCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all press-scale shrink-0 cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all press-scale shrink-0 cursor-pointer ${
                     isSel
                       ? 'bg-[#00B14F] text-white shadow-xs'
                       : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
@@ -666,8 +700,8 @@ export default function MenuPage() {
 
       {/* ─── MAIN CONTENT ─── */}
       <main className="px-4 pt-3.5 space-y-5">
-        {/* Loading skeletons */}
-        {loading && (
+        {/* Loading skeletons (only if no cache present) */}
+        {loading && categories.length === 0 && (
           <div className="space-y-4 pt-2">
             {[1, 2, 3, 4].map((n) => (
               <div key={n} className="h-28 bg-white rounded-2xl animate-pulse" />
@@ -678,7 +712,7 @@ export default function MenuPage() {
         {/* ══════════════════════════════════════════════════════════════
             1. FRONT PAGE / DISCOVERY HUB (When viewMode === 'home')
            ══════════════════════════════════════════════════════════════ */}
-        {!loading && !isMenuMode && (
+        {categories.length > 0 && !isMenuMode && (
           <>
             {/* 1. Quick Category Grid (8 Tiles) - Clicking any jumps into full menu at that category */}
             <div>
@@ -763,6 +797,7 @@ export default function MenuPage() {
                           src={img}
                           alt={cat.name}
                           fill
+                          loading="lazy"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                           sizes="200px"
                           unoptimized={img.startsWith('http')}
@@ -792,7 +827,7 @@ export default function MenuPage() {
             2. ALL MENU ITEMS AT ONCE VIEW (When isMenuMode === true)
                Render ALL categories & all dishes with Category Card Banners
            ══════════════════════════════════════════════════════════════ */}
-        {!loading && isMenuMode && (
+        {categories.length > 0 && isMenuMode && (
           <div className="space-y-7">
             {/* Search summary */}
             {searchQuery && (
@@ -841,6 +876,7 @@ export default function MenuPage() {
                       src={catImg}
                       alt={category.name}
                       fill
+                      loading="lazy"
                       className="object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
                       sizes="480px"
                       unoptimized={catImg.startsWith('http')}

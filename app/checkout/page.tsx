@@ -51,8 +51,26 @@ export default function CheckoutPage() {
 
   const [menuItemsMap, setMenuItemsMap] = useState<Record<string, MenuItemDetail>>({});
 
-  // Load menu item details for the checkout breakdown
+  // Load menu item details for the checkout breakdown (Instant SWR cache)
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('ka_menu_cache_v1');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.categories) {
+          const map: Record<string, MenuItemDetail> = {};
+          parsed.categories.forEach((cat: { items: MenuItemDetail[] }) => {
+            cat.items.forEach((item: MenuItemDetail) => {
+              map[item.id] = item;
+            });
+          });
+          setMenuItemsMap(map);
+        }
+      }
+    } catch {
+      // Ignore cache parse error
+    }
+
     async function fetchDetails() {
       try {
         const res = await fetch('/api/menu');
