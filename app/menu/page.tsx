@@ -5,7 +5,7 @@ import { useBucket, setPriceCache } from '@/lib/hooks/use-bucket';
 import Image from 'next/image';
 import Link from 'next/link';
 import BottomNav, { NavTab } from '@/components/bottom-nav';
-import PwaInstallBanner from '@/components/pwa-install-banner';
+import PwaInstallBanner, { PwaHeaderButton } from '@/components/pwa-install-banner';
 
 interface Addon {
   id: string;
@@ -639,6 +639,9 @@ export default function MenuPage() {
               </button>
             )}
           </div>
+
+          {/* Visible Install App Button in Header */}
+          <PwaHeaderButton />
 
           {/* Cart Icon in Header */}
           <Link

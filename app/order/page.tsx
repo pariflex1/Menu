@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BottomNav from '@/components/bottom-nav';
+import PwaInstallBanner, { PwaHeaderButton } from '@/components/pwa-install-banner';
 
 export default function OrderStatusSearchPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function OrderStatusSearchPage() {
         setRecentOrders([latest]);
       }
     } catch {
-      // Ignore localStorage errors
+      // Ignore localStorage error
     }
   }, []);
 
@@ -37,6 +38,9 @@ export default function OrderStatusSearchPage() {
 
   return (
     <div className="customer-page min-h-dvh bg-[#F7F9F8] pb-20">
+      {/* Sticky PWA Install Banner */}
+      <PwaInstallBanner />
+
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-4 py-3.5 border-b border-gray-100 shadow-2xs flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -51,9 +55,12 @@ export default function OrderStatusSearchPage() {
             <p className="text-[10px] text-gray-400">Krishna Anandam &bull; Vrindavan</p>
           </div>
         </div>
-        <span className="text-[10px] font-bold bg-[#00B14F]/10 text-[#00B14F] px-2.5 py-1 rounded-full border border-emerald-200">
-          Pure Veg
-        </span>
+        <div className="flex items-center gap-2">
+          <PwaHeaderButton />
+          <span className="text-[10px] font-bold bg-[#00B14F]/10 text-[#00B14F] px-2.5 py-1 rounded-full border border-emerald-200">
+            Pure Veg
+          </span>
+        </div>
       </header>
 
       <main className="px-4 py-6 space-y-6">

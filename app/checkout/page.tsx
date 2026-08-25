@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import Image from 'next/image';
 import QRScannerModal from '@/components/qr-scanner-modal';
+import PwaInstallBanner, { PwaHeaderButton } from '@/components/pwa-install-banner';
 
 interface MenuItemDetail {
   id: string;
@@ -241,8 +242,11 @@ export default function CheckoutPage() {
 
   return (
     <div className="customer-page min-h-dvh bg-white pb-24">
+      {/* Sticky PWA Install Banner */}
+      <PwaInstallBanner />
+
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-100">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-2xs">
         <div className="max-w-2xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
@@ -253,9 +257,12 @@ export default function CheckoutPage() {
             </Link>
             <h1 className="text-base font-semibold text-gray-900">Confirm Order</h1>
           </div>
-          <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-            KRISHNA ANANDAM
-          </span>
+          <div className="flex items-center gap-2">
+            <PwaHeaderButton />
+            <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              KRISHNA ANANDAM
+            </span>
+          </div>
         </div>
       </header>
 

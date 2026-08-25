@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import BottomNav from '@/components/bottom-nav';
 import { createClient } from '@/lib/supabase/client';
+import PwaInstallBanner, { PwaHeaderButton } from '@/components/pwa-install-banner';
 
 interface OrderItem {
   item_name: string;
@@ -238,6 +239,9 @@ export default function OrderTrackingPage() {
 
   return (
     <div className="min-h-dvh bg-[#F4F9F4] pb-20 font-sans">
+      {/* Sticky PWA Install Banner */}
+      <PwaInstallBanner />
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-emerald-100 shadow-2xs">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
@@ -259,12 +263,15 @@ export default function OrderTrackingPage() {
             </div>
           </div>
 
-          <Link
-            href="/menu"
-            className="text-xs font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-colors"
-          >
-            + Menu
-          </Link>
+          <div className="flex items-center gap-2">
+            <PwaHeaderButton />
+            <Link
+              href="/menu"
+              className="text-xs font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-colors"
+            >
+              + Menu
+            </Link>
+          </div>
         </div>
       </header>
 
