@@ -1,0 +1,42 @@
+╔════════════════════════════════════════════════════════════════╗
+║                 DATABASE SETUP - 3 SIMPLE STEPS                ║
+╔════════════════════════════════════════════════════════════════╗
+
+STEP 1: In the Notepad window that's already open
+────────────────────────────────────────────────────────────────
+  → Press Ctrl+A (selects all text)
+  → Press Ctrl+C (copies text)
+
+
+STEP 2: In the Browser window (Supabase SQL Editor)
+────────────────────────────────────────────────────────────────
+  → Click in the big text box
+  → Press Ctrl+V (pastes the SQL code)
+  → Click the green "RUN" button (top right corner)
+  → Wait 5-10 seconds
+
+
+STEP 3: Check the result
+────────────────────────────────────────────────────────────────
+  You should see: "Success. No rows returned"
+  
+  Then refresh: http://localhost:3000
+  The menu will load!
+
+
+════════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING:
+
+If Notepad is not open:
+  → Open: E:\Visitor Management System\My Projects\Menu\setup-database.sql
+
+If Browser is not open:
+  → Open: https://supabase.com/dashboard/project/mjgneisuyrlvvcjtdaaz/sql/new
+
+════════════════════════════════════════════════════════════════
+
+ALTERNATIVE: I can walk you through it step by step.
+Just let me know if you need help with any specific step!
+
+════════════════════════════════════════════════════════════════
