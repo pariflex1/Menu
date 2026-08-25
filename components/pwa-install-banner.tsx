@@ -50,6 +50,14 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
 
+    // Register Service Worker for PWA compliance
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then(() => console.log('PWA Service Worker active'))
+        .catch((err) => console.error('SW registration failed:', err));
+    }
+
     // 3. Detect iOS Safari
     const ua = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(ua);
