@@ -47,8 +47,8 @@ export async function sendWhatsAppTemplateMessage({
   languageCode?: string;
   parameters?: string[];
 }): Promise<{ success: boolean; data?: any; error?: string }> {
-  const token = process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_ID;
+  const token = process.env.WHATSAPP_TOKEN || 'EAAQKULcQUKEBR9dZAzwUk6VajWIZAglv2T8gdDcmyZAlRPHSRhKksEvUJ7M0wS3yUuJinfKJZAIqKV9aEZAwFpqEH4bmZBPaIbiyZBoGA5pjAVKHTUs8bqFwaXwrkgqGHZASVAZBWD8azfqXRWNjRGRah592VbZBFrhTvrOLXj8jmZCoTkzSAZCTGsEBbB5w5A3bMum7ogZDZD';
+  const phoneId = process.env.WHATSAPP_PHONE_ID || '639759029221223';
 
   if (!token || !phoneId) {
     console.warn('[WhatsApp] WHATSAPP_TOKEN or WHATSAPP_PHONE_ID is not set in environment.');

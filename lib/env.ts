@@ -6,16 +6,23 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().default('https://menu.krishnaanandam.in'),
 });
 
+const DEFAULT_WHATSAPP_TOKEN = 'EAAQKULcQUKEBR9dZAzwUk6VajWIZAglv2T8gdDcmyZAlRPHSRhKksEvUJ7M0wS3yUuJinfKJZAIqKV9aEZAwFpqEH4bmZBPaIbiyZBoGA5pjAVKHTUs8bqFwaXwrkgqGHZASVAZBWD8azfqXRWNjRGRah592VbZBFrhTvrOLXj8jmZCoTkzSAZCTGsEBbB5w5A3bMum7ogZDZD';
+const DEFAULT_WHATSAPP_PHONE_ID = '639759029221223';
+const DEFAULT_WHATSAPP_BUSINESS_ID = '635229359339421';
+const DEFAULT_WHATSAPP_VERIFY_TOKEN = 'rvmc';
+const DEFAULT_WHATSAPP_TEMPLATE_NAME = 'ka_restaurent_order';
+const DEFAULT_WHATSAPP_MANAGEMENT_PHONE = '919198433007';
+
 const serverEnvSchema = clientEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).default('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjcwODE1NCwiZXhwIjoyMTAyMjg0MTU0fQ.0DfWYxbgxmwrzBF58RXP6vxrJqrQyvfXzJ8OtnkGslc'),
   PAYMENT_SECRET_KEY: z.string().optional().default(''),
   PAYMENT_WEBHOOK_SECRET: z.string().optional().default(''),
-  WHATSAPP_TOKEN: z.string().optional(),
-  WHATSAPP_PHONE_ID: z.string().optional(),
-  WHATSAPP_BUSINESS_ID: z.string().optional(),
-  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
-  WHATSAPP_TEMPLATE_NAME: z.string().optional().default('ka_restaurent_order'),
-  WHATSAPP_MANAGEMENT_PHONE: z.string().optional().default('919198433007'),
+  WHATSAPP_TOKEN: z.string().default(DEFAULT_WHATSAPP_TOKEN),
+  WHATSAPP_PHONE_ID: z.string().default(DEFAULT_WHATSAPP_PHONE_ID),
+  WHATSAPP_BUSINESS_ID: z.string().default(DEFAULT_WHATSAPP_BUSINESS_ID),
+  WHATSAPP_VERIFY_TOKEN: z.string().default(DEFAULT_WHATSAPP_VERIFY_TOKEN),
+  WHATSAPP_TEMPLATE_NAME: z.string().default(DEFAULT_WHATSAPP_TEMPLATE_NAME),
+  WHATSAPP_MANAGEMENT_PHONE: z.string().default(DEFAULT_WHATSAPP_MANAGEMENT_PHONE),
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
@@ -57,6 +64,12 @@ export function getServerEnv(): ServerEnv {
     SUPABASE_SERVICE_ROLE_KEY: readEnv().SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjcwODE1NCwiZXhwIjoyMTAyMjg0MTU0fQ.0DfWYxbgxmwrzBF58RXP6vxrJqrQyvfXzJ8OtnkGslc',
     PAYMENT_SECRET_KEY: readEnv().PAYMENT_SECRET_KEY,
     PAYMENT_WEBHOOK_SECRET: readEnv().PAYMENT_WEBHOOK_SECRET,
+    WHATSAPP_TOKEN: readEnv().WHATSAPP_TOKEN || DEFAULT_WHATSAPP_TOKEN,
+    WHATSAPP_PHONE_ID: readEnv().WHATSAPP_PHONE_ID || DEFAULT_WHATSAPP_PHONE_ID,
+    WHATSAPP_BUSINESS_ID: readEnv().WHATSAPP_BUSINESS_ID || DEFAULT_WHATSAPP_BUSINESS_ID,
+    WHATSAPP_VERIFY_TOKEN: readEnv().WHATSAPP_VERIFY_TOKEN || DEFAULT_WHATSAPP_VERIFY_TOKEN,
+    WHATSAPP_TEMPLATE_NAME: readEnv().WHATSAPP_TEMPLATE_NAME || DEFAULT_WHATSAPP_TEMPLATE_NAME,
+    WHATSAPP_MANAGEMENT_PHONE: readEnv().WHATSAPP_MANAGEMENT_PHONE || DEFAULT_WHATSAPP_MANAGEMENT_PHONE,
   });
   if (!parsed.success) {
     const issues = parsed.error.issues
