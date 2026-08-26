@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { StaffSession } from '@/lib/auth/session';
 import QRCode from 'qrcode';
 import Image from 'next/image';
+import PwaInstallBanner, { PwaHeaderButton, PwaInstallButton } from '@/components/pwa-install-banner';
 
 interface OrderItem {
   id: string;
@@ -583,9 +584,12 @@ export default function DashboardClient({ session }: Props) {
   if (!isSuperAdmin) {
     return (
       <div className="min-h-dvh bg-gray-50/50 pb-20 font-sans">
+        {/* PWA Install Banner */}
+        <PwaInstallBanner />
+
         {/* Top Header */}
         <header className="sticky top-0 z-30 bg-white border-b border-gray-200/80 px-4 py-3 shadow-2xs">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs tracking-wider shadow-2xs">
                 KA
@@ -595,12 +599,15 @@ export default function DashboardClient({ session }: Props) {
                 <p className="text-[11px] text-gray-500 font-normal">{session.name} &bull; <span className="capitalize">{session.role}</span></p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-xs font-medium text-gray-600 hover:text-red-600 bg-gray-50 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 transition-colors"
-            >
-              Sign Out
-            </button>
+            <div className="flex items-center gap-2">
+              <PwaHeaderButton />
+              <button
+                onClick={handleLogout}
+                className="text-xs font-medium text-gray-600 hover:text-red-600 bg-gray-50 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 transition-colors cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
 
           {/* Status filter bar */}
@@ -731,9 +738,12 @@ export default function DashboardClient({ session }: Props) {
   // ══════════════════════════════════════════════════════════════
   return (
     <div className="min-h-dvh bg-gray-50/40 pb-16 font-sans">
+      {/* ─── Top Sticky PWA Install Banner ─── */}
+      <PwaInstallBanner />
+
       {/* ─── Top Navbar ─── */}
       <header className="sticky top-0 z-30 bg-white border-b border-gray-200/80 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm tracking-wider shadow-2xs">
               KA
@@ -751,7 +761,10 @@ export default function DashboardClient({ session }: Props) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Install App Button */}
+            <PwaHeaderButton />
+
             <div className="hidden sm:flex items-center gap-2 bg-gray-50 border border-gray-200/80 rounded-xl px-3 py-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <div className="text-right">
@@ -766,7 +779,7 @@ export default function DashboardClient({ session }: Props) {
               onClick={handleLogout}
               variant="outline"
               size="sm"
-              className="text-xs font-medium border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-lg transition-colors"
+              className="text-xs font-medium border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-lg transition-colors cursor-pointer"
             >
               Sign Out
             </Button>

@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { loginSchema, type LoginInput } from '@/lib/validation/auth';
+import PwaInstallBanner, { PwaInstallButton } from '@/components/pwa-install-banner';
 
 function LoginForm() {
   const router = useRouter();
@@ -47,15 +48,22 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[#F4F9F4] px-4">
-      <div className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-6 shadow-xl">
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 text-xl font-black mb-2 shadow-inner">
-            KA
+    <main className="min-h-dvh flex flex-col bg-[#F4F9F4]">
+      <PwaInstallBanner />
+
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-6 shadow-xl relative">
+          <div className="flex justify-end mb-2">
+            <PwaInstallButton variant="pill" label="Install App" />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900">KRISHNA ANANDAM</h1>
-          <p className="mt-1 text-sm text-slate-500">Staff & Management Dashboard Login</p>
-        </div>
+
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 text-xl font-black mb-2 shadow-inner">
+              KA
+            </div>
+            <h1 className="text-2xl font-extrabold text-slate-900">KRISHNA ANANDAM</h1>
+            <p className="mt-1 text-sm text-slate-500">Staff & Management Dashboard Login</p>
+          </div>
 
         {serverError && (
           <div
@@ -133,7 +141,8 @@ function LoginForm() {
           <p className="text-xs text-slate-600 font-mono">Password: <span className="font-bold text-slate-900">Password123!</span></p>
         </div>
       </div>
-    </main>
+    </div>
+  </main>
   );
 }
 

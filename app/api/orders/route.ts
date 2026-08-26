@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { orderCreateSchema } from '@/lib/validation/orders';
+import { sendNewOrderAlertToManagement } from '@/lib/whatsapp';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -299,6 +300,39 @@ export async function POST(request: Request) {
   if (historyError) {
     console.error('Failed to create status history:', historyError);
   }
+
+  // Resolve table/room name for notifications
+  let tableName: string | null = null;
+  let roomNumber: string | null = null;
+
+  if (tableId) {
+    const { data: tbl } = await supabase.from('tables').select('table_number').eq('id', tableId).maybeSingle();
+    tableName = tbl?.table_number || null;
+  } else if (roomId) {
+    const { data: rm } = await supabase.from('rooms').select('room_number').eq('id', roomId).maybeSingle();
+    roomNumber = rm?.room_number || null;
+  }
+
+  // Send WhatsApp notification alert to management asynchronously
+  sendNewOrderAlertToManagement({
+    orderId: order.id,
+    orderNumber: order.order_number,
+    customerName: customer_name,
+    customerPhone: customer_phone,
+    orderType: order_type,
+    tableName: tableName,
+    roomNumber: roomNumber,
+    items: orderItems.map((item) => ({
+      name: item.item_name,
+      quantity: item.quantity,
+      price: item.unit_price,
+    })),
+    total: order.total,
+    paymentMethod: payment_method,
+    notes: notes,
+  }).catch((err) => {
+    console.error('[WhatsApp Notification Error]:', err);
+  });
 
   return NextResponse.json(
     {

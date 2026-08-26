@@ -239,7 +239,7 @@ export default function PwaInstallBanner() {
 
   return (
     <div className="sticky top-0 z-40 bg-gradient-to-r from-gray-900 via-slate-900 to-emerald-950 text-white px-3 py-2 border-b border-emerald-800/40 shadow-sm">
-      <div className="max-w-[480px] mx-auto flex items-center justify-between gap-2.5">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2.5">
         {/* App Icon + Tagline */}
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-[#00B14F] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs border border-white/20">
@@ -250,7 +250,7 @@ export default function PwaInstallBanner() {
               Krishna Anandam App
             </p>
             <p className="text-[10px] text-emerald-300 leading-tight truncate">
-              Install for instant ordering & faster speed
+              Install for instant ordering & faster management
             </p>
           </div>
         </div>
@@ -272,7 +272,13 @@ export default function PwaInstallBanner() {
  * Compact Header Install Button
  * Can be placed directly inside any header bar (e.g. next to search or title)
  */
-export function PwaHeaderButton() {
+export function PwaHeaderButton({
+  className = '',
+  showText = true,
+}: {
+  className?: string;
+  showText?: boolean;
+}) {
   const { canInstall, triggerInstall } = usePwaInstall();
 
   if (!canInstall) return null;
@@ -281,10 +287,64 @@ export function PwaHeaderButton() {
     <button
       onClick={triggerInstall}
       aria-label="Install App"
-      className="flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80 px-2.5 py-1.5 rounded-full text-[11px] font-black transition-all press-scale shrink-0 cursor-pointer shadow-2xs"
+      className={`flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80 px-2.5 py-1.5 rounded-full text-[11px] font-black transition-all press-scale shrink-0 cursor-pointer shadow-2xs ${className}`}
     >
       <span>📲</span>
-      <span className="hidden xs:inline">Install</span>
+      {showText && <span>Install App</span>}
     </button>
   );
 }
+
+/**
+ * Universal App Install Button for Admin, Kitchen, Manager, and Staff UI
+ */
+export function PwaInstallButton({
+  className = '',
+  label = 'Install App',
+  icon = '📲',
+  variant = 'default',
+}: {
+  className?: string;
+  label?: string;
+  icon?: string;
+  variant?: 'default' | 'pill' | 'admin' | 'outline';
+}) {
+  const { canInstall, triggerInstall } = usePwaInstall();
+
+  if (!canInstall) return null;
+
+  if (variant === 'pill') {
+    return (
+      <button
+        onClick={triggerInstall}
+        className={`flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-2xs ${className}`}
+      >
+        <span>{icon}</span>
+        <span>{label}</span>
+      </button>
+    );
+  }
+
+  if (variant === 'admin') {
+    return (
+      <button
+        onClick={triggerInstall}
+        className={`flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all cursor-pointer ${className}`}
+      >
+        <span>{icon}</span>
+        <span>{label}</span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={triggerInstall}
+      className={`flex items-center gap-1.5 bg-[#00B14F] hover:bg-[#009b45] active:scale-95 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-all cursor-pointer ${className}`}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
+

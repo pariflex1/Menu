@@ -10,6 +10,12 @@ const serverEnvSchema = clientEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).default('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjcwODE1NCwiZXhwIjoyMTAyMjg0MTU0fQ.0DfWYxbgxmwrzBF58RXP6vxrJqrQyvfXzJ8OtnkGslc'),
   PAYMENT_SECRET_KEY: z.string().optional().default(''),
   PAYMENT_WEBHOOK_SECRET: z.string().optional().default(''),
+  WHATSAPP_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_ID: z.string().optional(),
+  WHATSAPP_BUSINESS_ID: z.string().optional(),
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_TEMPLATE_NAME: z.string().optional().default('ka_restaurent_order'),
+  WHATSAPP_MANAGEMENT_PHONE: z.string().optional().default('919198433007'),
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
