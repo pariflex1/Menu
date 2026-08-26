@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   },
   description: 'Order food online at Krishna Anandam, Vrindavan. Browse our full menu and place your order.',
   manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export const viewport: Viewport = {
