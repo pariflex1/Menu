@@ -18,18 +18,16 @@ async function seed() {
       id: RESTAURANT_ID,
       name: 'KRISHNA ANANDAM',
       slug: 'krishna-anandam',
-      logo_url: null,
       phone: '+91 91290 54406, +91 92085 50807',
       email: 'krishnaanandam08@gmail.com',
       address: 'Plot No. E-17, Sector-2, Rukmani Vihar, Opposite Sanskar City, Vrindavan, Mathura (UP) 281121',
-      currency: 'INR',
-      timezone: 'Asia/Kolkata'
+      currency: 'INR'
     });
 
   if (restError) throw new Error('Failed to upsert restaurant: ' + restError.message);
   console.log('✅ Restaurant details updated to KRISHNA ANANDAM');
 
-  // 2. Update/Upsert Restaurant Settings
+  // 2. Update/Upsert Restaurant Settings (settings stored as JSONB + flat columns)
   const { error: settingsError } = await supabase
     .from('restaurant_settings')
     .upsert({
@@ -42,8 +40,19 @@ async function seed() {
       delivery_fee: 30.00,
       opening_time: '07:30',
       closing_time: '23:00',
-      manual_override: null
-    });
+      manual_override: null,
+      settings: {
+        tax_percent: 5.00,
+        table_ordering_enabled: true,
+        room_service_enabled: true,
+        home_delivery_enabled: true,
+        min_home_order_amount: 100.00,
+        delivery_fee: 30.00,
+        opening_time: '07:30',
+        closing_time: '23:00',
+        manual_override: null
+      }
+    }, { onConflict: 'restaurant_id' });
 
   if (settingsError) throw new Error('Failed to upsert settings: ' + settingsError.message);
   console.log('✅ Restaurant settings updated (GST 5% extra, opening 07:30 AM)');
