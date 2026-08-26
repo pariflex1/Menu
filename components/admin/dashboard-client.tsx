@@ -591,8 +591,15 @@ export default function DashboardClient({ session }: Props) {
         <header className="sticky top-0 z-30 bg-white border-b border-gray-200/80 px-4 py-3 shadow-2xs">
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs tracking-wider shadow-2xs">
-                KA
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-gray-200/80 shrink-0 shadow-2xs">
+                <Image
+                  src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+                  alt="Krishna Anandam"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
               </div>
               <div>
                 <h1 className="text-sm font-semibold text-gray-900 leading-tight">Kitchen & Operations Hub</h1>
@@ -644,9 +651,11 @@ export default function DashboardClient({ session }: Props) {
                   ? `Table ${order.tables.table_number}`
                   : order.rooms?.room_number
                   ? `Room ${order.rooms.room_number}`
+                  : order.customer_name
+                  ? order.customer_name
                   : order.order_type === 'home'
                   ? 'Takeaway'
-                  : 'Dine-In';
+                  : 'Direct Order';
 
               const bundleItems = order.order_items || [];
               const totalItemsCount = bundleItems.reduce((s, i) => s + i.quantity, 0);
@@ -745,8 +754,15 @@ export default function DashboardClient({ session }: Props) {
       <header className="sticky top-0 z-30 bg-white border-b border-gray-200/80 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm tracking-wider shadow-2xs">
-              KA
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-gray-200/80 shrink-0 shadow-2xs">
+              <Image
+                src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+                alt="Krishna Anandam"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -943,9 +959,11 @@ export default function DashboardClient({ session }: Props) {
                       ? `Table ${order.tables.table_number}`
                       : order.rooms?.room_number
                       ? `Room ${order.rooms.room_number}`
+                      : order.customer_name
+                      ? order.customer_name
                       : order.order_type === 'home'
                       ? 'Takeaway'
-                      : 'Dine-In';
+                      : 'Direct Order';
 
                   const bundleItems = order.order_items || [];
                   const totalItemsCount = bundleItems.reduce((s, i) => s + i.quantity, 0);

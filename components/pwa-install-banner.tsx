@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext } from 'react';
+import Image from 'next/image';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -130,8 +131,15 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
           <div className="bg-white text-gray-900 rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#00B14F] text-white flex items-center justify-center font-black text-xs">
-                  KA
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-gray-200/80 shrink-0 shadow-2xs">
+                  <Image
+                    src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+                    alt="Krishna Anandam"
+                    width={36}
+                    height={36}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-gray-900 leading-tight">
@@ -242,8 +250,15 @@ export default function PwaInstallBanner() {
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2.5">
         {/* App Icon + Tagline */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-[#00B14F] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs border border-white/20">
-            KA
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-white shrink-0 shadow-xs border border-white/20">
+            <Image
+              src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+              alt="Krishna Anandam"
+              width={36}
+              height={36}
+              className="w-full h-full object-cover"
+              unoptimized
+            />
           </div>
           <div className="min-w-0">
             <p className="font-extrabold text-xs leading-tight text-white truncate">

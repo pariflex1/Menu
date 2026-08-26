@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -58,11 +59,18 @@ function LoginForm() {
           </div>
 
           <div className="mb-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 text-xl font-black mb-2 shadow-inner">
-              KA
+            <div className="flex justify-center mb-2">
+              <Image
+                src="https://krishnaanandam.in/wp-content/uploads/2026/08/logo-black.webp"
+                alt="Krishna Anandam"
+                width={240}
+                height={64}
+                className="h-14 w-auto object-contain"
+                unoptimized
+                priority
+              />
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900">KRISHNA ANANDAM</h1>
-            <p className="mt-1 text-sm text-slate-500">Staff & Management Dashboard Login</p>
+            <p className="text-xs text-slate-500 font-medium mt-1">Staff & Management Dashboard Login</p>
           </div>
 
         {serverError && (

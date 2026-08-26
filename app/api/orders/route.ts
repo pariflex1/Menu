@@ -57,24 +57,9 @@ export async function POST(request: Request) {
     }
 
     restaurantId = restaurant.id;
-
-    if (order_type === 'table') {
-      const { data: defaultTable } = await supabase
-        .from('tables')
-        .select('id')
-        .eq('restaurant_id', restaurantId)
-        .limit(1)
-        .maybeSingle();
-      tableId = defaultTable?.id || null;
-    } else if (order_type === 'room') {
-      const { data: defaultRoom } = await supabase
-        .from('rooms')
-        .select('id')
-        .eq('restaurant_id', restaurantId)
-        .limit(1)
-        .maybeSingle();
-      roomId = defaultRoom?.id || null;
-    }
+    // When ordering without scanning a table or room QR, keep tableId and roomId null
+    tableId = null;
+    roomId = null;
   } else if (order_type === 'table' || order_type === 'room') {
     if (!session_token) {
       return NextResponse.json({ error: 'session_token required' }, { status: 400 });

@@ -5,7 +5,7 @@ import { useBucket, setPriceCache } from '@/lib/hooks/use-bucket';
 import Image from 'next/image';
 import Link from 'next/link';
 import BottomNav, { NavTab } from '@/components/bottom-nav';
-import PwaInstallBanner, { PwaHeaderButton } from '@/components/pwa-install-banner';
+import PwaInstallBanner from '@/components/pwa-install-banner';
 
 interface Addon {
   id: string;
@@ -603,9 +603,16 @@ export default function MenuPage() {
               ‹
             </button>
           ) : (
-            /* Brand Logo */
-            <div className="w-9 h-9 rounded-full bg-[#00B14F] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
-              KA
+            /* Brand Logo Icon */
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-white border border-gray-200/80 shrink-0 shadow-2xs">
+              <Image
+                src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+                alt="Krishna Anandam"
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
             </div>
           )}
 
@@ -639,9 +646,6 @@ export default function MenuPage() {
               </button>
             )}
           </div>
-
-          {/* Visible Install App Button in Header */}
-          <PwaHeaderButton />
 
           {/* Cart Icon in Header */}
           <Link

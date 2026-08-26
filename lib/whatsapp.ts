@@ -137,12 +137,16 @@ export async function sendNewOrderAlertToManagement(order: WhatsAppOrderDetails)
     hour12: true,
   }).format(now);
 
-  // Format fulfillment source (Table / Room / Delivery)
-  let tableRoom = 'Home Delivery';
-  if (order.orderType === 'table') {
-    tableRoom = order.tableName ? `Table ${order.tableName}` : 'Table Service';
-  } else if (order.orderType === 'room') {
-    tableRoom = order.roomNumber ? `Room ${order.roomNumber}` : 'Room Service';
+  // Format fulfillment source (Table / Room / Customer Name)
+  let tableRoom = order.customerName || 'Direct Order';
+  if (order.tableName) {
+    tableRoom = `Table ${order.tableName}`;
+  } else if (order.roomNumber) {
+    tableRoom = `Room ${order.roomNumber}`;
+  } else if (order.customerName) {
+    tableRoom = order.customerName;
+  } else if (order.orderType === 'home') {
+    tableRoom = 'Home Delivery';
   }
 
   const formattedTotal = `₹${order.total.toFixed(2)}`;
