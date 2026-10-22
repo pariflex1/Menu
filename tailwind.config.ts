@@ -40,6 +40,12 @@ const config: Config = {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
         },
+        brand: {
+          DEFAULT: '#2E5026',
+          dark: '#1e3619',
+          light: '#3d6b33',
+          soft: '#2E502614',
+        },
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',

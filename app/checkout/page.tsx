@@ -291,12 +291,14 @@ export default function CheckoutPage() {
                 const detail = menuItemsMap[bucketItem.menu_item_id];
                 const itemName = detail?.name || 'Menu Item';
                 const itemPrice = detail?.price || bucketItem.unit_price || 0;
+                // Images hidden across app as requested; preserved for future extension
+                const SHOW_ITEM_IMAGES = false;
                 const itemImage = detail?.image_url;
 
                 return (
                   <div key={bucketItem.menu_item_id} className="py-2.5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      {itemImage ? (
+                      {SHOW_ITEM_IMAGES && itemImage ? (
                         <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-gray-50 shrink-0">
                           <Image
                             src={itemImage}
@@ -308,12 +310,12 @@ export default function CheckoutPage() {
                           />
                         </div>
                       ) : (
-                        <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 text-lg border border-gray-100">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-sm border border-gray-200 text-gray-700">
                           🍽️
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{itemName}</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{itemName}</p>
                         <p className="text-xs text-gray-400">₹{itemPrice.toFixed(0)} each</p>
                       </div>
                     </div>
@@ -558,9 +560,9 @@ export default function CheckoutPage() {
                 <span>GST (5%)</span>
                 <span>₹{gstAmount.toFixed(2)}</span>
               </div>
-              <div className="border-t border-gray-100 pt-2 flex justify-between text-base font-semibold text-gray-900">
+              <div className="border-t border-gray-100 pt-2 flex justify-between text-base font-bold text-gray-900">
                 <span>Total Payable</span>
-                <span className="text-emerald-700">₹{grandTotal.toFixed(2)}</span>
+                <span className="text-[#2E5026] text-lg font-black">₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -569,7 +571,7 @@ export default function CheckoutPage() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-[#00B14F] hover:bg-[#009b45] active:bg-[#00863c] text-white font-bold py-4 rounded-full text-base transition-all disabled:opacity-60 shadow-lg shadow-[#00B14F]/25"
+            className="w-full bg-[#2E5026] hover:bg-[#233d1c] active:bg-[#1a2d15] text-white font-bold py-4 rounded-full text-base transition-all disabled:opacity-60 shadow-lg shadow-[#2E5026]/25 cursor-pointer"
           >
             {isSubmitting ? 'Placing Order...' : `Place Order • ₹${grandTotal.toFixed(2)}`}
           </Button>

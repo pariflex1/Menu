@@ -220,7 +220,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
             <button
               onClick={() => setShowGuideModal(false)}
-              className="w-full bg-[#00B14F] hover:bg-[#009b45] text-white font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="w-full bg-[#2E5026] hover:bg-[#233d1c] text-white font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               Got it, Close
             </button>
@@ -273,7 +273,7 @@ export default function PwaInstallBanner() {
         {/* High-visibility Install Button */}
         <button
           onClick={triggerInstall}
-          className="bg-[#00B14F] hover:bg-[#009b45] active:scale-95 text-white font-black text-xs px-3.5 py-1.5 rounded-full shadow-md shadow-[#00B14F]/30 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer animate-pulse"
+          className="bg-[#2E5026] hover:bg-[#233d1c] active:scale-95 text-white font-black text-xs px-3.5 py-1.5 rounded-full shadow-md shadow-[#2E5026]/30 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer animate-pulse"
         >
           <span>📲</span>
           <span>Install App</span>
@@ -355,7 +355,7 @@ export function PwaInstallButton({
   return (
     <button
       onClick={triggerInstall}
-      className={`flex items-center gap-1.5 bg-[#00B14F] hover:bg-[#009b45] active:scale-95 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-all cursor-pointer ${className}`}
+      className={`flex items-center gap-1.5 bg-[#2E5026] hover:bg-[#233d1c] active:scale-95 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-all cursor-pointer ${className}`}
     >
       <span>{icon}</span>
       <span>{label}</span>

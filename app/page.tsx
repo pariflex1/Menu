@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import HomePageClient from '@/components/home-page-client';
 
 export default function HomePage() {
-  redirect('/menu');
+  return <HomePageClient />;
 }

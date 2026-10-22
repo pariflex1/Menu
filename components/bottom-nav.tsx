@@ -51,7 +51,7 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
         {totalItemCount > 0 && currentTab !== 'basket' && (
           <button
             onClick={() => router.push('/checkout')}
-            className="slide-up w-full bg-[#00B14F] hover:bg-[#009b45] active:bg-[#00863c] text-white rounded-xl flex items-center justify-between px-3.5 py-2.5 transition-all press-scale shadow-md shadow-[#00B14F]/20 border border-emerald-400/30 cursor-pointer"
+            className="slide-up w-full bg-[#2E5026] hover:bg-[#233d1c] active:bg-[#1a2d15] text-white rounded-xl flex items-center justify-between px-3.5 py-2.5 transition-all press-scale shadow-md shadow-[#2E5026]/20 border border-[#2E5026]/30 cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <span className="bg-white/20 w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs">
@@ -61,12 +61,12 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
                 <p className="font-bold text-xs leading-tight">
                   {totalItemCount === 1 ? '1 Dish Selected' : `${totalItemCount} Dishes Selected`}
                 </p>
-                <p className="text-[10px] text-emerald-100 font-medium">Click to review & order</p>
+                <p className="text-[10px] text-gray-200 font-medium">Click to review & order</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-black text-xs">₹{total.toFixed(0)}</span>
-              <span className="text-[11px] bg-white text-[#00B14F] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+              <span className="text-[11px] bg-white text-[#2E5026] font-black px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
                 View Basket ›
               </span>
             </div>
@@ -80,11 +80,11 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
         >
           {/* Tab 1: Home (Front Page) */}
           <Link
-            href="/menu"
+            href="/"
             onClick={(e) => handleTabClick('home', e)}
             className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all press-scale flex-1 text-center ${
               currentTab === 'home'
-                ? 'bg-[#00B14F] text-white shadow-xs font-bold'
+                ? 'bg-[#2E5026] text-white shadow-xs font-bold'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'
             }`}
           >
@@ -94,11 +94,11 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
 
           {/* Tab 2: All Menu (All items at once) */}
           <Link
-            href="/menu?view=all"
+            href="/menu"
             onClick={(e) => handleTabClick('menu', e)}
             className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all press-scale flex-1 text-center ${
               currentTab === 'menu'
-                ? 'bg-[#00B14F] text-white shadow-xs font-bold'
+                ? 'bg-[#2E5026] text-white shadow-xs font-bold'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'
             }`}
           >
@@ -116,7 +116,7 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
             }}
             className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all press-scale flex-1 text-center relative ${
               currentTab === 'status'
-                ? 'bg-[#00B14F] text-white shadow-xs font-bold'
+                ? 'bg-[#2E5026] text-white shadow-xs font-bold'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'
             }`}
           >
@@ -134,7 +134,7 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
             href="/checkout"
             className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all press-scale flex-1 text-center relative ${
               currentTab === 'basket'
-                ? 'bg-[#00B14F] text-white shadow-xs font-bold'
+                ? 'bg-[#2E5026] text-white shadow-xs font-bold'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'
             }`}
           >
@@ -144,8 +144,8 @@ export default function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
                 <span
                   className={`absolute -top-1 -right-2.5 text-[8.5px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-xs ${
                     currentTab === 'basket'
-                      ? 'bg-white text-[#00B14F]'
-                      : 'bg-[#00B14F] text-white'
+                      ? 'bg-white text-[#2E5026]'
+                      : 'bg-[#2E5026] text-white'
                   }`}
                 >
                   {totalItemCount}

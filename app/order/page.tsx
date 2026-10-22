@@ -57,7 +57,7 @@ export default function OrderStatusSearchPage() {
         </div>
         <div className="flex items-center gap-2">
           <PwaHeaderButton />
-          <span className="text-[10px] font-bold bg-[#00B14F]/10 text-[#00B14F] px-2.5 py-1 rounded-full border border-emerald-200">
+          <span className="text-[10px] font-bold bg-[#2E5026]/10 text-[#2E5026] px-2.5 py-1 rounded-full border border-[#2E5026]/20">
             Pure Veg
           </span>
         </div>
@@ -66,14 +66,14 @@ export default function OrderStatusSearchPage() {
       <main className="px-4 py-6 space-y-6">
         {/* Latest Active Order Banner */}
         {latestOrderId && (
-          <div className="bg-gradient-to-br from-emerald-600 to-[#00B14F] text-white rounded-3xl p-5 shadow-lg shadow-emerald-500/20 space-y-4">
+          <div className="bg-gradient-to-br from-[#1e3619] to-[#2E5026] text-white rounded-3xl p-5 shadow-lg shadow-[#2E5026]/20 space-y-4">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[10px] font-bold bg-white/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-xs">
                   Active Session
                 </span>
                 <h2 className="text-lg font-black mt-1">Track Current Order</h2>
-                <p className="text-xs text-emerald-100">
+                <p className="text-xs text-gray-200">
                   View kitchen preparation and delivery progress in real-time.
                 </p>
               </div>
@@ -82,7 +82,7 @@ export default function OrderStatusSearchPage() {
 
             <Link
               href={`/order/${latestOrderId}`}
-              className="w-full bg-white text-[#00B14F] hover:bg-emerald-50 font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all press-scale"
+              className="w-full bg-white text-[#2E5026] hover:bg-gray-50 font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all press-scale"
             >
               <span>Open Live Order Tracker</span>
               <span>›</span>
@@ -108,7 +108,7 @@ export default function OrderStatusSearchPage() {
               placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
               value={orderQuery}
               onChange={(e) => setOrderQuery(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#00B14F] focus:border-transparent font-medium"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#2E5026] focus:border-transparent font-medium"
             />
             <button
               type="submit"
@@ -134,7 +134,7 @@ export default function OrderStatusSearchPage() {
                   className="bg-white border border-gray-100 rounded-2xl p-3 flex items-center justify-between hover:border-gray-200 shadow-2xs transition-all press-scale"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-100">
+                    <div className="w-9 h-9 rounded-xl bg-gray-100 text-[#2E5026] flex items-center justify-center font-bold text-xs border border-gray-200">
                       #{index + 1}
                     </div>
                     <div>
@@ -144,7 +144,7 @@ export default function OrderStatusSearchPage() {
                       <p className="text-[10px] text-gray-400">Click to view status & items</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-[#00B14F]">View ›</span>
+                  <span className="text-xs font-bold text-[#2E5026]">View ›</span>
                 </Link>
               ))}
             </div>
@@ -163,7 +163,7 @@ export default function OrderStatusSearchPage() {
             </p>
             <Link
               href="/menu"
-              className="inline-block bg-[#00B14F] text-white font-bold text-xs px-5 py-2.5 rounded-full shadow-sm hover:bg-[#009b45] transition-all"
+              className="inline-block bg-[#2E5026] hover:bg-[#233d1c] text-white font-bold text-xs px-5 py-2.5 rounded-full shadow-sm transition-all"
             >
               Browse All Dishes
             </Link>

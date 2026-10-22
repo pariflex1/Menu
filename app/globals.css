@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    /* Clean White + Black + Green palette */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 7%;
+    /* Clean White + Grey + Black + #2E5026 palette */
+    --background: 0 0% 99%;           /* Crisp light white #FAFAFA */
+    --foreground: 0 0% 10%;           /* Deep black #1A1A1A */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
-    --primary: 160 84% 39%;           /* Emerald 600 #059669 */
+    --card-foreground: 0 0% 10%;
+    --primary: 109 36% 23%;           /* Signature brand green #2E5026 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
+    --secondary: 0 0% 95%;            /* Clean light grey */
     --secondary-foreground: 0 0% 15%;
     --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 152 30% 96%;
-    --accent-foreground: 0 0% 10%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 109 25% 95%;            /* Subtle tinted light green */
+    --accent-foreground: 109 36% 23%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 160 84% 39%;
+    --border: 0 0% 88%;               /* Grey border #E0E0E0 */
+    --input: 0 0% 88%;
+    --ring: 109 36% 23%;
     --radius: 0.75rem;
   }
 
@@ -116,6 +116,67 @@
   }
   .fade-in {
     animation: fadeIn 0.4s ease;
+  }
+
+  /* ─── Scroll Reveal System ─── */
+  @keyframes revealUp {
+    from {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes revealFade {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Base state: hidden until visible */
+  .reveal-card {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Active state: triggered by JS IntersectionObserver */
+  .reveal-card.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Category banner reveal */
+  .reveal-banner {
+    opacity: 0;
+    transform: translateY(20px) scale(0.99);
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal-banner.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Category card reveal (home page grid) */
+  .reveal-grid-item {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal-grid-item.is-visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* QR Scanner animated scan line */

@@ -6,6 +6,7 @@ import type { StaffSession } from '@/lib/auth/session';
 import QRCode from 'qrcode';
 import Image from 'next/image';
 import PwaInstallBanner, { PwaHeaderButton, PwaInstallButton } from '@/components/pwa-install-banner';
+import { OfferBanner, DEFAULT_OFFER_BANNERS, BANNERS_STORAGE_KEY } from '@/lib/banners';
 
 interface OrderItem {
   id: string;
@@ -90,7 +91,7 @@ interface Props {
   session: StaffSession;
 }
 
-type SuperAdminTab = 'orders' | 'menu' | 'categories' | 'staff' | 'tables';
+type SuperAdminTab = 'orders' | 'menu' | 'categories' | 'banners' | 'staff' | 'tables';
 
 const STATUS_ACTIONS: Record<string, { label: string; next: string; color: string }[]> = {
   new: [
@@ -149,6 +150,12 @@ export default function DashboardClient({ session }: Props) {
   const [tables, setTables] = useState<TableItem[]>([]);
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [qrViewMode, setQrViewMode] = useState<'tables' | 'rooms'>('tables');
+
+  // Carousel Offer Banners state
+  const [bannersList, setBannersList] = useState<OfferBanner[]>(DEFAULT_OFFER_BANNERS);
+  const [isSavingBanners, setIsSavingBanners] = useState(false);
+  const [bannerSaveMsg, setBannerSaveMsg] = useState<string | null>(null);
+  const [editingBanner, setEditingBanner] = useState<OfferBanner | null>(null);
 
   const [menuSearch, setMenuSearch] = useState('');
   const [selectedCatFilter, setSelectedCatFilter] = useState<string>('all');
@@ -219,6 +226,7 @@ export default function DashboardClient({ session }: Props) {
       fetchStaff();
       fetchTables();
       fetchRooms();
+      fetchBanners();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuperAdmin]);
@@ -293,6 +301,60 @@ export default function DashboardClient({ session }: Props) {
       if (res.ok && data.rooms) setRooms(data.rooms);
     } catch (e) {
       console.error('Failed to fetch rooms:', e);
+    }
+  }
+
+  async function fetchBanners() {
+    try {
+      const res = await fetch('/api/admin/banners');
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.banners) && data.banners.length > 0) {
+        setBannersList(data.banners);
+        return;
+      }
+    } catch {
+      // fallback
+    }
+    try {
+      const cached = localStorage.getItem(BANNERS_STORAGE_KEY);
+      if (cached) {
+        setBannersList(JSON.parse(cached));
+      }
+    } catch {}
+  }
+
+  async function handleSaveBanners(updated: OfferBanner[]) {
+    setIsSavingBanners(true);
+    setBannerSaveMsg(null);
+    try {
+      const res = await fetch('/api/admin/banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banners: updated }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const saved = data.banners || updated;
+        setBannersList(saved);
+        try {
+          localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(saved));
+          window.dispatchEvent(new Event('offer_banners_updated'));
+        } catch {}
+        setBannerSaveMsg('Banners saved & published to home page!');
+        setTimeout(() => setBannerSaveMsg(null), 3000);
+      } else {
+        alert('Failed to save banners');
+      }
+    } catch {
+      alert('Network error saving banners');
+    } finally {
+      setIsSavingBanners(false);
+    }
+  }
+
+  function handleResetBanners() {
+    if (confirm('Reset all 6 offer carousel banners to defaults?')) {
+      handleSaveBanners(DEFAULT_OFFER_BANNERS);
     }
   }
 
@@ -850,6 +912,20 @@ export default function DashboardClient({ session }: Props) {
             <span>Categories</span>
             <span className="bg-gray-200 text-gray-700 text-[10px] font-medium px-1.5 py-0.2 rounded-full">
               {categories.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('banners')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+              activeTab === 'banners'
+                ? 'bg-gray-900 text-white shadow-xs'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <span>Offer Banners (Carousel)</span>
+            <span className="bg-[#2E5026] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              {bannersList.length}
             </span>
           </button>
 
@@ -1443,6 +1519,200 @@ export default function DashboardClient({ session }: Props) {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ─── TAB: OFFER CAROUSEL BANNERS (6 IMAGES) ─── */}
+        {activeTab === 'banners' && (
+          <div className="space-y-6">
+            <div className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                    Home Page Offer Carousel Banners
+                  </h2>
+                  <span className="text-[10px] font-bold bg-[#2E5026]/10 text-[#2E5026] px-2.5 py-0.5 rounded-full border border-[#2E5026]/20">
+                    {bannersList.filter((b) => b.is_active).length} Active of {bannersList.length}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Manage the running carousel images, headlines, promo badges, and offer links displayed on the customer home page.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  onClick={handleResetBanners}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
+                >
+                  Reset Defaults
+                </Button>
+                <Button
+                  onClick={() => handleSaveBanners(bannersList)}
+                  disabled={isSavingBanners}
+                  className="bg-[#2E5026] hover:bg-[#233d1c] text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  {isSavingBanners ? 'Saving...' : '💾 Publish Banners'}
+                </Button>
+              </div>
+            </div>
+
+            {bannerSaveMsg && (
+              <div className="bg-emerald-50 border border-emerald-200 text-[#2E5026] px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                <span>✓</span>
+                <span>{bannerSaveMsg}</span>
+              </div>
+            )}
+
+            {/* Banners Grid / List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {bannersList.map((banner, index) => {
+                return (
+                  <div
+                    key={banner.id || index}
+                    className={`bg-white border rounded-2xl overflow-hidden shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between ${
+                      banner.is_active ? 'border-gray-200/90' : 'border-gray-200 opacity-60'
+                    }`}
+                  >
+                    {/* Live Image Banner Preview */}
+                    <div className="relative aspect-[21/9] bg-gray-900 overflow-hidden group">
+                      <Image
+                        src={banner.image_url}
+                        alt={banner.title}
+                        fill
+                        className="object-cover opacity-85 group-hover:scale-105 transition-transform duration-500"
+                        sizes="400px"
+                        unoptimized={banner.image_url.startsWith('http')}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-between p-3 text-white">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-black bg-black/50 backdrop-blur-xs px-2 py-0.5 rounded-full border border-white/20">
+                            Slide #{index + 1}
+                          </span>
+                          <span className="text-[9px] font-extrabold bg-[#2E5026] text-white px-2 py-0.5 rounded-full shadow-xs uppercase">
+                            {banner.badge || 'PROMO'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-extrabold line-clamp-1">{banner.title}</p>
+                          <p className="text-[10px] text-gray-200 line-clamp-1 opacity-90">{banner.subtitle}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Banner Controls & Fields */}
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-gray-700">Slide Status</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = bannersList.map((b, i) =>
+                                i === index ? { ...b, is_active: !b.is_active } : b
+                              );
+                              setBannersList(updated);
+                            }}
+                            className={`text-xs font-bold px-2.5 py-0.5 rounded-full cursor-pointer transition-colors ${
+                              banner.is_active
+                                ? 'bg-emerald-50 text-[#2E5026] border border-emerald-200'
+                                : 'bg-gray-100 text-gray-500 border border-gray-200'
+                            }`}
+                          >
+                            {banner.is_active ? '● Active' : '○ Hidden'}
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="text-[10.5px] font-bold text-gray-500 uppercase tracking-wider">
+                            Headline / Title
+                          </label>
+                          <input
+                            type="text"
+                            value={banner.title}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBannersList((prev) =>
+                                prev.map((b, i) => (i === index ? { ...b, title: val } : b))
+                              );
+                            }}
+                            className="mt-1 w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 focus:bg-white focus:ring-1 focus:ring-[#2E5026] outline-none"
+                            placeholder="e.g. Royal Delux Thali Feast"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10.5px] font-bold text-gray-500 uppercase tracking-wider">
+                            Offer Badge
+                          </label>
+                          <input
+                            type="text"
+                            value={banner.badge}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBannersList((prev) =>
+                                prev.map((b, i) => (i === index ? { ...b, badge: val } : b))
+                              );
+                            }}
+                            className="mt-1 w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 focus:bg-white focus:ring-1 focus:ring-[#2E5026] outline-none"
+                            placeholder="e.g. 20% OFF or SPECIAL COMBO"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10.5px] font-bold text-gray-500 uppercase tracking-wider">
+                            Offer Subtitle / Description
+                          </label>
+                          <input
+                            type="text"
+                            value={banner.subtitle}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBannersList((prev) =>
+                                prev.map((b, i) => (i === index ? { ...b, subtitle: val } : b))
+                              );
+                            }}
+                            className="mt-1 w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 focus:bg-white focus:ring-1 focus:ring-[#2E5026] outline-none"
+                            placeholder="e.g. Flat 20% OFF on all authentic platters"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10.5px] font-bold text-gray-500 uppercase tracking-wider">
+                            Banner Image URL
+                          </label>
+                          <input
+                            type="url"
+                            value={banner.image_url}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBannersList((prev) =>
+                                prev.map((b, i) => (i === index ? { ...b, image_url: val } : b))
+                              );
+                            }}
+                            className="mt-1 w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 focus:bg-white focus:ring-1 focus:ring-[#2E5026] outline-none font-mono text-[11px]"
+                            placeholder="https://..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                        <span>Position {index + 1} of {bannersList.length}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveBanners(bannersList)}
+                          className="font-bold text-[#2E5026] hover:underline cursor-pointer"
+                        >
+                          Save changes ›
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>
