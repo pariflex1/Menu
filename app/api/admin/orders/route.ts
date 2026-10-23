@@ -4,16 +4,11 @@ import { requireStaffApi } from '@/lib/auth/api-guards';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function GET() {
   const guard = await requireStaffApi();
   if (!guard.ok) return guard.response;
 
-  const { searchParams } = new URL(request.url);
-  const restaurantId = searchParams.get('restaurant_id');
-
-  if (!restaurantId || restaurantId !== guard.session.restaurantId) {
-    return NextResponse.json({ error: 'invalid_restaurant' }, { status: 400 });
-  }
+  const restaurantId = guard.session.restaurantId;
 
   const supabase = createServiceClient();
 

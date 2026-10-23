@@ -35,44 +35,24 @@ export const DEFAULT_OFFER_BANNERS: OfferBanner[] = [
     title: 'Tandoori Sizzlers & Nazrane',
     subtitle: 'Clay-oven Paneer Tikka served sizzling hot with mint dip',
     badge: "CHEF'S SIGNATURE",
-    image_url: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=1200&q=80',
+    image_url: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?auto=format&fit=crop&w=1200&q=80',
     link_url: '/menu?cat=tandoor',
     is_active: true,
     sort_order: 3,
   },
   {
     id: 'banner-4',
-    title: 'Desi Chinese Sensation',
-    subtitle: 'Chilli Paneer Gravy + Veg Hakka Noodles Combo deal',
-    badge: 'SUPER SAVER',
-    image_url: 'https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=1200&q=80',
-    link_url: '/menu?cat=chinese',
-    is_active: true,
-    sort_order: 4,
-  },
-  {
-    id: 'banner-5',
     title: 'Sweet Delights & Kulfi',
     subtitle: 'Buy 1 Get 1 on Kesar Badam Matka Kulfi & desserts',
     badge: 'BUY 1 GET 1',
     image_url: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=1200&q=80',
-    link_url: '/menu?cat=desserts',
+    link_url: '/menu?cat=dessert',
     is_active: true,
-    sort_order: 5,
-  },
-  {
-    id: 'banner-6',
-    title: 'Special Mocktails & Shakes',
-    subtitle: 'Beat the heat with refreshing mojitos, lassi & shakes',
-    badge: 'COOL OFFERS',
-    image_url: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=1200&q=80',
-    link_url: '/menu?cat=beverages',
-    is_active: true,
-    sort_order: 6,
+    sort_order: 4,
   },
 ];
 
-export const BANNERS_STORAGE_KEY = 'ka_offer_banners_v1';
+export const BANNERS_STORAGE_KEY = 'ka_offer_banners_v2';
 
 let currentBanners: OfferBanner[] = [...DEFAULT_OFFER_BANNERS];
 

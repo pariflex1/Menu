@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import BottomNav from '@/components/bottom-nav';
-import PwaInstallBanner from '@/components/pwa-install-banner';
 import OfferCarousel from '@/components/offer-carousel';
 
 interface MenuItem {
@@ -81,7 +80,7 @@ export default function HomePageClient() {
 
     async function fetchMenu() {
       try {
-        const res = await fetch('/api/menu');
+        const res = await fetch('/api/menu?refresh=true', { cache: 'no-store' });
         const data = await res.json();
         if (res.ok && data.categories) {
           setCategories(data.categories);
@@ -114,11 +113,9 @@ export default function HomePageClient() {
 
   return (
     <div className="customer-page min-h-dvh bg-[#FAFAFA] pb-24 text-gray-900 font-sans">
-      {/* ─── Top Sticky PWA Install Banner ─── */}
-      <PwaInstallBanner />
-
       {/* ─── Sticky Header ─── */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-4 pt-3.5 pb-2.5 border-b border-gray-200/90 shadow-2xs">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md pt-3.5 pb-2.5 border-b border-gray-200/90 shadow-2xs">
+        <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
         <div className="flex items-center gap-2.5">
           {/* Brand Logo */}
           <div className="w-9 h-9 rounded-full overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs">
@@ -134,7 +131,7 @@ export default function HomePageClient() {
 
           {/* Capsule Search Input */}
           <form onSubmit={handleSearchSubmit} className="flex-1">
-            <div className="flex items-center gap-2 bg-gray-100 hover:bg-gray-100/80 rounded-full px-3.5 py-2 border border-transparent focus-within:border-[#2E5026] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#2E5026]/20 transition-all">
+            <div className="flex items-center gap-2 bg-gray-100 hover:bg-gray-100/80 rounded-full px-3.5 py-2 border border-transparent focus-within:border-[#05C12F] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#05C12F]/20 transition-all">
               <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -166,10 +163,11 @@ export default function HomePageClient() {
             🛒
           </Link>
         </div>
+        </div>
       </header>
 
-      {/* ─── Main Content ─── */}
-      <main className="px-4 pt-3.5 space-y-4">
+      {/* Main Content */}
+      <main className="mx-auto w-full max-w-6xl px-4 md:px-6 pt-3.5 space-y-4">
         {/* 1. TOP RUNNING CAROUSEL OF OFFERS (Managed by Admin Portal - 6 Images) */}
         <section aria-label="Special Offers">
           <OfferCarousel
@@ -182,7 +180,7 @@ export default function HomePageClient() {
         {/* 2. Restaurant Pure Veg Info Bar */}
         <div className="bg-white border border-gray-100 rounded-2xl p-3 shadow-2xs flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#2E5026]/10 text-[#2E5026] flex items-center justify-center text-lg border border-[#2E5026]/20 shrink-0 font-bold">
+            <div className="w-9 h-9 rounded-xl bg-[#05C12F]/10 text-[#05C12F] flex items-center justify-center text-lg border border-[#05C12F]/20 shrink-0 font-bold">
               🌿
             </div>
             <div>
@@ -190,7 +188,7 @@ export default function HomePageClient() {
               <p className="text-[10.5px] text-gray-500">Krishna Anandam &bull; Vrindavan</p>
             </div>
           </div>
-          <span className="text-[10px] font-bold bg-[#2E5026]/10 text-[#2E5026] px-2.5 py-1 rounded-full border border-[#2E5026]/20">
+          <span className="text-[10px] font-bold bg-[#05C12F]/10 text-[#05C12F] px-2.5 py-1 rounded-full border border-[#05C12F]/20">
             GST Extra
           </span>
         </div>
@@ -209,7 +207,7 @@ export default function HomePageClient() {
 
             <Link
               href="/menu"
-              className="text-xs font-bold text-[#2E5026] hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-[#05C12F] hover:underline flex items-center gap-1"
             >
               <span>See Full Menu</span>
               <span>›</span>
@@ -218,7 +216,7 @@ export default function HomePageClient() {
 
           {/* Loading Skeletons */}
           {loading && categories.length === 0 && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div key={n} className="h-24 bg-white rounded-2xl border border-gray-100 animate-pulse" />
               ))}
@@ -235,10 +233,10 @@ export default function HomePageClient() {
                 <Link
                   key={category.id}
                   href={`/menu?cat=${category.id}`}
-                  className="press-scale bg-white border border-gray-200/80 hover:border-[#2E5026]/40 hover:shadow-xs rounded-2xl p-3.5 flex flex-col justify-between shadow-2xs transition-all group cursor-pointer text-left"
+                  className="press-scale bg-white border border-gray-200/80 hover:border-[#05C12F]/40 hover:shadow-xs rounded-2xl p-3.5 flex flex-col justify-between shadow-2xs transition-all group cursor-pointer text-left"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="w-11 h-11 rounded-2xl bg-[#2E5026]/10 text-[#2E5026] flex items-center justify-center text-2xl shadow-2xs group-hover:scale-105 transition-transform border border-[#2E5026]/15">
+                    <div className="w-11 h-11 rounded-2xl bg-[#05C12F]/10 text-[#05C12F] flex items-center justify-center text-2xl shadow-2xs group-hover:scale-105 transition-transform border border-[#05C12F]/15">
                       {icon}
                     </div>
                     <span className="text-[10px] font-bold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full border border-gray-200 shrink-0">
@@ -247,7 +245,7 @@ export default function HomePageClient() {
                   </div>
 
                   <div className="mt-3">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight group-hover:text-[#2E5026] transition-colors truncate">
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight group-hover:text-[#05C12F] transition-colors truncate">
                       {category.name}
                     </h3>
                     <p className="text-[10px] text-gray-500 mt-0.5 truncate">
@@ -255,7 +253,7 @@ export default function HomePageClient() {
                     </p>
                   </div>
 
-                  <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-[#2E5026]">
+                  <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-[#05C12F]">
                     <span>Explore</span>
                     <span className="group-hover:translate-x-0.5 transition-transform">›</span>
                   </div>

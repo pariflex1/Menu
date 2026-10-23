@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
-export const revalidate = 60; // Next.js ISR revalidation every 60 seconds
+export const revalidate = 0;
 
 const DEFAULT_RESTAURANT_ID = '11111111-1111-1111-1111-111111111111';
 
 // Server-side in-memory cache for sub-millisecond response times
 let cachedData: { [key: string]: { data: any; timestamp: number } } = {};
-const CACHE_TTL_MS = 60 * 1000; // 60s memory cache
+const CACHE_TTL_MS = 10 * 1000; // 10s memory cache
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   if (!bypassCache && cachedData[cacheKey] && Date.now() - cachedData[cacheKey].timestamp < CACHE_TTL_MS) {
     return NextResponse.json(cachedData[cacheKey].data, {
       headers: {
-        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
         'X-Cache': 'HIT',
       },
     });
@@ -149,7 +149,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json(payload, {
     headers: {
-      'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+      'Cache-Control': bypassCache ? 'no-store' : 'public, max-age=10, stale-while-revalidate=30',
       'X-Cache': 'MISS',
     },
   });

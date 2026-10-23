@@ -97,6 +97,17 @@ export async function PATCH(
     console.error('Failed to create status history:', historyError);
   }
 
+  const { logActivity } = await import('@/lib/logging');
+  await logActivity({
+    restaurantId: order.restaurant_id,
+    action: 'ORDER_STATUS_CHANGED',
+    level: (newStatus as string) === 'cancelled' ? 'warning' : 'info',
+    actorName: guard.session.name || 'Staff',
+    actorRole: guard.session.role,
+    details: `Order status changed from "${currentStatus}" to "${newStatus}"`,
+    metadata: { order_id: orderId, from: currentStatus, to: newStatus },
+  });
+
   return NextResponse.json(
     { ok: true, status: newStatus },
     {

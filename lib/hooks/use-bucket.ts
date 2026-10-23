@@ -22,12 +22,6 @@ function broadcast() {
   window.dispatchEvent(new CustomEvent(BUCKET_EVENT));
 }
 
-// Load from localStorage once on startup
-try {
-  const stored = localStorage.getItem(BUCKET_KEY);
-  if (stored) globalItems = JSON.parse(stored);
-} catch { /* ignore */ }
-
 // Global cache of menu item prices
 let priceCache: Record<string, number> = {};
 export function setPriceCache(id: string, price: number) {

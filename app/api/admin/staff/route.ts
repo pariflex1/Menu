@@ -3,13 +3,14 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { requireRoleApi } from '@/lib/auth/api-guards';
 import { can, STAFF_ROLES } from '@/lib/auth/roles';
 import { z } from 'zod';
+import { logActivity } from '@/lib/logging';
 
 const createStaffSchema = z.object({
-  name: z.string().min(2).max(100),
-  email: z.string().email(),
-  phone: z.string().min(10).max(15),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().min(10, 'Enter 10-digit mobile number'),
   role: z.enum(STAFF_ROLES),
-  password: z.string().min(6).max(100),
+  password: z.string().min(6, 'Password must be at least 6 characters').max(100),
 });
 
 export async function GET() {
@@ -58,15 +59,45 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, email, phone, role, password } = parsed.data;
+  const { name, phone: rawPhone, role, password } = parsed.data;
+
+  // Enforce strictly 10-digit mobile number
+  const digitsOnly = rawPhone.replace(/\D/g, '');
+  const phone = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+  if (phone.length !== 10) {
+    return NextResponse.json(
+      { error: 'Mobile number must be exactly 10 digits', issues: { phone: ['Enter a valid 10-digit mobile number'] } },
+      { status: 400 },
+    );
+  }
+
   const supabase = createServiceClient();
+
+  // Check if mobile number is already registered
+  const { data: existingPhone } = await supabase
+    .from('user_profiles')
+    .select('id, name')
+    .eq('phone', phone)
+    .maybeSingle();
+
+  if (existingPhone) {
+    return NextResponse.json(
+      { error: `Mobile number ${phone} is already registered for staff member "${existingPhone.name}"` },
+      { status: 400 },
+    );
+  }
+
+  // Use provided email or auto-generate one from phone for Supabase auth
+  const email = parsed.data.email && parsed.data.email.trim()
+    ? parsed.data.email.trim()
+    : `staff.${phone}@krishnaanandam.internal`;
 
   // 1. Create auth user in Supabase
   const { data: userData, error: userError } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: { name },
+    user_metadata: { name, phone },
   });
 
   if (userError) {
@@ -91,6 +122,17 @@ export async function POST(request: Request) {
     await supabase.auth.admin.deleteUser(userData.user.id);
     return NextResponse.json({ error: profileError.message }, { status: 500 });
   }
+
+  // Log staff creation
+  await logActivity({
+    restaurantId: guard.session.restaurantId,
+    action: 'STAFF_CREATED',
+    level: 'info',
+    actorName: guard.session.name || 'Admin',
+    actorRole: guard.session.role,
+    details: `Added new staff member "${name}" (${role}) with mobile ${phone}`,
+    metadata: { staff_id: profile.id, role, phone, email },
+  });
 
   return NextResponse.json(
     {

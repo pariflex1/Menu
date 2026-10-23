@@ -159,24 +159,24 @@ export default function QRScannerModal({ isOpen, onClose, onSuccess, required = 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm" style={{ animation: 'fadeIn 0.2s ease' }}>
-      <div className="relative w-full sm:max-w-sm overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl border border-emerald-100">
+      <div className="relative w-full sm:max-w-sm overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl border border-emerald-100 dark:bg-neutral-900 dark:border-neutral-800">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-emerald-100 bg-[#F4F9F4] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-emerald-100 bg-[#F4F9F4] px-5 py-4 dark:bg-neutral-900 dark:border-neutral-800">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-xs">
               QR
             </span>
             <div>
-              <h2 className="text-base font-extrabold text-slate-900">Scan Table / Room QR</h2>
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-gray-100">Scan Table / Room QR</h2>
               {required && (
-                <p className="text-[10px] text-amber-600 font-bold">Required to place order</p>
+                <p className="text-[10px] text-amber-600 font-bold dark:text-amber-400">Required to place order</p>
               )}
             </div>
           </div>
           {!required && (
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200/80 text-slate-700 hover:bg-slate-300 text-sm font-black transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200/80 text-slate-700 hover:bg-slate-300 text-sm font-black transition-colors dark:bg-neutral-800 dark:text-gray-200 dark:hover:bg-neutral-700"
             >
               ✕
             </button>
@@ -186,17 +186,17 @@ export default function QRScannerModal({ isOpen, onClose, onSuccess, required = 
         {/* Camera Viewfinder */}
         <div className="p-4 space-y-3">
           {scanError && (
-            <div className="rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 text-xs text-red-700 font-semibold flex items-start gap-2">
+            <div className="rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 text-xs text-red-700 font-semibold flex items-start gap-2 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300">
               <span className="shrink-0">⚠️</span>
               <span>{scanError}</span>
             </div>
           )}
 
           {resolving ? (
-            <div className="flex flex-col items-center justify-center h-64 rounded-2xl bg-emerald-50 text-center p-6 space-y-3">
+            <div className="flex flex-col items-center justify-center h-64 rounded-2xl bg-emerald-50 text-center p-6 space-y-3 dark:bg-emerald-950/40">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent"></div>
-              <p className="font-extrabold text-emerald-900 text-sm">Verifying QR Code...</p>
-              <p className="text-xs text-emerald-700">Connecting your order to the table</p>
+              <p className="font-extrabold text-emerald-900 text-sm dark:text-emerald-200">Verifying QR Code...</p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">Connecting your order to the table</p>
             </div>
           ) : !cameraError ? (
             <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-black shadow-inner">
@@ -229,20 +229,20 @@ export default function QRScannerModal({ isOpen, onClose, onSuccess, required = 
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl bg-amber-50 p-5 border border-amber-200 text-sm text-amber-900 leading-relaxed text-center space-y-2">
+            <div className="rounded-2xl bg-amber-50 p-5 border border-amber-200 text-sm text-amber-900 leading-relaxed text-center space-y-2 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-200">
               <div className="text-3xl">📷</div>
               <p className="font-bold">{cameraError}</p>
               <button
                 type="button"
                 onClick={() => { setCameraError(null); startCamera(); }}
-                className="mt-1 text-xs font-bold text-emerald-700 underline"
+                className="mt-1 text-xs font-bold text-emerald-700 underline dark:text-emerald-400"
               >
                 Try Again
               </button>
             </div>
           )}
 
-          <p className="text-center text-[11px] text-slate-400 font-medium pb-1">
+          <p className="text-center text-[11px] text-slate-400 font-medium pb-1 dark:text-gray-500">
             Find the QR code on your table card or hotel room door
           </p>
         </div>

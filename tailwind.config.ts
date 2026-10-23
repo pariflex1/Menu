@@ -41,10 +41,10 @@ const config: Config = {
           foreground: 'hsl(var(--accent-foreground))',
         },
         brand: {
-          DEFAULT: '#2E5026',
-          dark: '#1e3619',
-          light: '#3d6b33',
-          soft: '#2E502614',
+          DEFAULT: '#05C12F',
+          dark: '#04A328',
+          light: '#2ED657',
+          soft: '#05C12F14',
         },
         card: {
           DEFAULT: 'hsl(var(--card))',

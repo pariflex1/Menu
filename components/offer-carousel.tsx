@@ -15,36 +15,34 @@ export default function OfferCarousel({ onSelectCategory }: Props) {
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
-  // Load banners from API & localStorage cache
+  // Load fresh banners from the API; cache is only a network-failure fallback
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(BANNERS_STORAGE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setBanners(parsed);
-        }
-      }
-    } catch {
-      // Ignore cache error
-    }
-
     async function fetchBanners() {
       try {
-        const res = await fetch('/api/banners');
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.banners) && data.banners.length > 0) {
-            setBanners(data.banners);
-            try {
-              localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(data.banners));
-            } catch {
-              // Ignore
-            }
+        const res = await fetch('/api/banners', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to load banners');
+        const data = await res.json();
+        if (Array.isArray(data.banners) && data.banners.length > 0) {
+          setBanners(data.banners);
+          try {
+            localStorage.setItem(BANNERS_STORAGE_KEY, JSON.stringify(data.banners));
+          } catch {
+            // Ignore
           }
+          return;
         }
       } catch {
-        // Fallback to default
+        // Fall through to cache
+      }
+
+      try {
+        const cached = localStorage.getItem(BANNERS_STORAGE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) setBanners(parsed);
+        }
+      } catch {
+        // Ignore cache error
       }
     }
     fetchBanners();
@@ -125,7 +123,7 @@ export default function OfferCarousel({ onSelectCategory }: Props) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-3.5 sm:p-4 text-white">
                 <div className="space-y-1">
                   {banner.badge && (
-                    <span className="inline-block bg-[#2E5026] text-white text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-xs tracking-wider border border-white/20">
+                    <span className="inline-block bg-[#05C12F] text-white text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-xs tracking-wider border border-white/20">
                       {banner.badge}
                     </span>
                   )}

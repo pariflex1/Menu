@@ -4,25 +4,47 @@
 
 @layer base {
   :root {
-    /* Clean White + Grey + Black + #2E5026 palette */
+    /* Clean White + Grey + Black + #05C12F palette */
     --background: 0 0% 99%;           /* Crisp light white #FAFAFA */
     --foreground: 0 0% 10%;           /* Deep black #1A1A1A */
     --card: 0 0% 100%;
     --card-foreground: 0 0% 10%;
-    --primary: 109 36% 23%;           /* Signature brand green #2E5026 */
+    --primary: 133 95% 39%;           /* Signature brand green #05C12F */
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 95%;            /* Clean light grey */
     --secondary-foreground: 0 0% 15%;
     --muted: 0 0% 95%;
     --muted-foreground: 0 0% 40%;
-    --accent: 109 25% 95%;            /* Subtle tinted light green */
-    --accent-foreground: 109 36% 23%;
+    --accent: 133 80% 95%;            /* Subtle tinted light green */
+    --accent-foreground: 133 95% 30%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 88%;               /* Grey border #E0E0E0 */
     --input: 0 0% 88%;
-    --ring: 109 36% 23%;
+    --ring: 133 95% 39%;
     --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 150 8% 5%;
+    --foreground: 0 0% 95%;
+    --card: 150 6% 8%;
+    --card-foreground: 0 0% 95%;
+    --primary: 133 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 150 5% 14%;
+    --secondary-foreground: 0 0% 92%;
+    --muted: 150 5% 14%;
+    --muted-foreground: 150 5% 64%;
+    --accent: 133 45% 14%;
+    --accent-foreground: 133 85% 70%;
+    --border: 150 5% 20%;
+    --input: 150 5% 20%;
+    --ring: 133 90% 50%;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   * {
@@ -43,11 +65,21 @@
     position: relative;
   }
 
-  /* Customer-facing pages (menu, checkout, order) get mobile-capped width */
+  /* Customer-facing pages share a fluid, centered layout */
   .customer-page {
-    max-width: 480px;
+    width: 100%;
     margin: 0 auto;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.03);
+  }
+
+  @media (min-width: 1024px) {
+    .customer-page {
+      box-shadow: none;
+    }
+  }
+
+  html.dark .customer-page {
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -141,18 +173,15 @@
     }
   }
 
-  /* Base state: hidden until visible */
+  /* Menu item card: immediately visible, no reveal delay */
   .reveal-card {
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
-
-  /* Active state: triggered by JS IntersectionObserver */
   .reveal-card.is-visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 
   /* Category banner reveal */

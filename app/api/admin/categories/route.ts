@@ -4,17 +4,12 @@ import { requireRoleApi } from '@/lib/auth/api-guards';
 import { can } from '@/lib/auth/roles';
 import { categorySchema } from '@/lib/validation/menu';
 
-export async function GET(request: Request) {
+export async function GET() {
   const guard = await requireRoleApi([], can.editMenu);
   if (!guard.ok) return guard.response;
 
   const supabase = createServiceClient();
-  const { searchParams } = new URL(request.url);
-  const restaurantId = searchParams.get('restaurant_id');
-
-  if (!restaurantId) {
-    return NextResponse.json({ error: 'restaurant_id required' }, { status: 400 });
-  }
+  const restaurantId = guard.session.restaurantId;
 
   const { data, error } = await supabase
     .from('categories')

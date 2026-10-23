@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { requireRoleApi } from '@/lib/auth/api-guards';
 import { can, STAFF_ROLES } from '@/lib/auth/roles';
 import { z } from 'zod';
+import { logActivity } from '@/lib/logging';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,11 +30,24 @@ export async function PATCH(
     );
   }
 
+  const updateData: Record<string, any> = { ...parsed.data };
+  if (updateData.phone) {
+    const digitsOnly = updateData.phone.replace(/\D/g, '');
+    const phone = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+    if (phone.length !== 10) {
+      return NextResponse.json(
+        { error: 'Phone number must be a 10-digit mobile number' },
+        { status: 400 },
+      );
+    }
+    updateData.phone = phone;
+  }
+
   const supabase = createServiceClient();
 
   const { data: updated, error } = await supabase
     .from('user_profiles')
-    .update(parsed.data)
+    .update(updateData)
     .eq('id', id)
     .eq('restaurant_id', guard.session.restaurantId)
     .select()
@@ -42,6 +56,16 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await logActivity({
+    restaurantId: guard.session.restaurantId,
+    action: 'STAFF_UPDATED',
+    level: 'info',
+    actorName: guard.session.name || 'Admin',
+    actorRole: guard.session.role,
+    details: `Updated staff profile "${updated.name}" (${updated.role})`,
+    metadata: { staff_id: id, updates: updateData },
+  });
 
   return NextResponse.json({ staff: updated });
 }
@@ -56,10 +80,10 @@ export async function DELETE(
   const id = params.id;
   const supabase = createServiceClient();
 
-  // Find profile first to get user_id
+  // Find profile first to get user_id and details for logging
   const { data: profile, error: fetchErr } = await supabase
     .from('user_profiles')
-    .select('id, user_id')
+    .select('id, user_id, name, role, phone')
     .eq('id', id)
     .eq('restaurant_id', guard.session.restaurantId)
     .maybeSingle();
@@ -89,6 +113,16 @@ export async function DELETE(
   } catch (err) {
     console.error('Failed to delete auth user:', err);
   }
+
+  await logActivity({
+    restaurantId: guard.session.restaurantId,
+    action: 'STAFF_DELETED',
+    level: 'warning',
+    actorName: guard.session.name || 'Admin',
+    actorRole: guard.session.role,
+    details: `Removed staff member "${profile.name}" (${profile.role}, phone: ${profile.phone})`,
+    metadata: { staff_id: id },
+  });
 
   return NextResponse.json({ ok: true });
 }

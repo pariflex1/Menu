@@ -21,11 +21,16 @@ export async function POST(request: Request) {
     items,
     customer_name,
     customer_phone,
-    delivery_address_id,
+    customer_location,
+    customer_latitude,
+    customer_longitude,
+    delivery_address_id: initialDeliveryAddressId,
     payment_method,
     notes,
     skip_session,
   } = parsed.data;
+
+  let delivery_address_id = initialDeliveryAddressId;
 
   const supabase = createServiceClient();
 
@@ -92,11 +97,7 @@ export async function POST(request: Request) {
     }
 
     customerId = session.customer_id;
-  } else {
-    if (!delivery_address_id) {
-      return NextResponse.json({ error: 'delivery_address_id required' }, { status: 400 });
-    }
-
+  } else if (delivery_address_id) {
     const { data: address } = await supabase
       .from('customer_addresses')
       .select('customer_id, customers!inner(restaurant_id)')
@@ -109,6 +110,73 @@ export async function POST(request: Request) {
 
     customerId = address.customer_id;
     restaurantId = (address.customers as any).restaurant_id;
+  } else if (customer_location && customer_phone) {
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+
+    if (!restaurant) {
+      return NextResponse.json({ error: 'restaurant_not_found' }, { status: 404 });
+    }
+
+    restaurantId = restaurant.id;
+
+    const phone = customer_phone.trim();
+    const { data: existingCustomer } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('phone', phone)
+      .maybeSingle();
+
+    let resolvedCustomerId = existingCustomer?.id;
+
+    if (!resolvedCustomerId) {
+      const { data: createdCustomer, error: customerError } = await supabase
+        .from('customers')
+        .insert({ phone, name: customer_name })
+        .select('id')
+        .single();
+
+      if (customerError) {
+        return NextResponse.json({ error: customerError.message }, { status: 500 });
+      }
+      resolvedCustomerId = createdCustomer.id;
+    }
+
+    if (!resolvedCustomerId) {
+      return NextResponse.json({ error: 'customer_not_found' }, { status: 500 });
+    }
+
+    const { data: createdAddress, error: addressError } = await supabase
+      .from('customer_addresses')
+      .insert({
+        customer_id: resolvedCustomerId,
+        label: 'Other',
+        name: customer_name,
+        phone,
+        address_line_1: customer_location.trim(),
+        city: 'Vrindavan',
+        state: 'Uttar Pradesh',
+        pincode: '281121',
+        latitude: customer_latitude ?? null,
+        longitude: customer_longitude ?? null,
+      })
+      .select('id')
+      .single();
+
+    if (addressError) {
+      return NextResponse.json({ error: addressError.message }, { status: 500 });
+    }
+
+    customerId = resolvedCustomerId;
+    delivery_address_id = createdAddress.id;
+  } else {
+    return NextResponse.json(
+      { error: 'delivery_address_id or customer_location required' },
+      { status: 400 },
+    );
   }
 
   const { data: settings } = await supabase
