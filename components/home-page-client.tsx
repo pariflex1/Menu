@@ -114,13 +114,16 @@ export default function HomePageClient() {
   return (
     <div className="customer-page min-h-dvh bg-[#FAFAFA] pb-24 text-gray-900 font-sans">
       {/* ─── Sticky Header ─── */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md pt-3.5 pb-2.5 border-b border-gray-200/90 shadow-2xs">
-        <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+      <header
+        style={{ top: 'var(--pwa-banner-offset, 0px)' }}
+        className="sticky z-30 bg-white/95 backdrop-blur-md pt-3.5 pb-2.5 border-b border-gray-200/90 shadow-2xs"
+      >
+        <div className="mx-auto w-full max-w-[480px] px-4">
         <div className="flex items-center gap-2.5">
           {/* Brand Logo */}
           <div className="w-9 h-9 rounded-full overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs">
             <Image
-              src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+              src="/icons/logo.webp"
               alt="Krishna Anandam"
               width={36}
               height={36}
@@ -167,7 +170,7 @@ export default function HomePageClient() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto w-full max-w-6xl px-4 md:px-6 pt-3.5 space-y-4">
+      <main className="mx-auto w-full max-w-[480px] px-4 pt-3.5 space-y-4">
         {/* 1. TOP RUNNING CAROUSEL OF OFFERS (Managed by Admin Portal - 6 Images) */}
         <section aria-label="Special Offers">
           <OfferCarousel
@@ -216,7 +219,7 @@ export default function HomePageClient() {
 
           {/* Loading Skeletons */}
           {loading && categories.length === 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 ">
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div key={n} className="h-24 bg-white rounded-2xl border border-gray-100 animate-pulse" />
               ))}
@@ -233,6 +236,7 @@ export default function HomePageClient() {
                 <Link
                   key={category.id}
                   href={`/menu?cat=${category.id}`}
+                  prefetch={false}
                   className="press-scale bg-white border border-gray-200/80 hover:border-[#05C12F]/40 hover:shadow-xs rounded-2xl p-3.5 flex flex-col justify-between shadow-2xs transition-all group cursor-pointer text-left"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -245,7 +249,7 @@ export default function HomePageClient() {
                   </div>
 
                   <div className="mt-3">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight group-hover:text-[#05C12F] transition-colors truncate">
+                    <h3 className="font-bold text-gray-900 text-xs leading-tight group-hover:text-[#05C12F] transition-colors truncate">
                       {category.name}
                     </h3>
                     <p className="text-[10px] text-gray-500 mt-0.5 truncate">

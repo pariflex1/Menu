@@ -147,7 +147,10 @@ export default function ReelCarousel() {
     );
   }
 
-  const bottomPadding = totalItemCount > 0 ? 'pb-[10.5rem]' : 'pb-[7.5rem]';
+  // Keep the reel copy just above the fixed basket bar + bottom navigation, without excess empty space.
+  const bottomPadding = totalItemCount > 0
+    ? 'pb-[calc(8.25rem+env(safe-area-inset-bottom,0px))]'
+    : 'pb-[calc(5.25rem+env(safe-area-inset-bottom,0px))]';
 
   return (
     <div className="min-h-dvh w-full bg-black flex justify-center">
@@ -200,7 +203,7 @@ export default function ReelCarousel() {
             return (
               <div
                 key={banner.id || index}
-                className="relative w-full h-full flex flex-col justify-between overflow-hidden shrink-0"
+                className="relative w-full h-full overflow-hidden shrink-0"
               >
                 {/* Full Bleed Image: 100% CLEAR and vivid, NO overall dark tint */}
                 <div className="absolute inset-0">
@@ -217,11 +220,8 @@ export default function ReelCarousel() {
                   <div className="absolute bottom-0 left-0 right-0 h-[52%] bg-gradient-to-t from-black/95 via-black/75 via-40% to-transparent pointer-events-none" />
                 </div>
 
-                {/* Top spacer */}
-                <div className="h-28" />
-
-                {/* Bottom Reel Content Overlay */}
-                <div className={`relative z-10 px-5 ${bottomPadding} w-full text-white space-y-2.5`}>
+                {/* Bottom Reel Content Overlay — anchored to the bottom, clear of the nav */}
+                <div className={`absolute inset-x-0 bottom-0 z-10 w-full px-5 pt-10 ${bottomPadding} text-white space-y-2.5`}>
                   {/* Badge */}
                   {banner.badge && (
                     <div className="flex items-center gap-2">

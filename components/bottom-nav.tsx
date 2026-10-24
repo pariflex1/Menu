@@ -53,7 +53,7 @@ export default function BottomNav({ activeTab, onSelectTab, className = '' }: Bo
 
   return (
     <div className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-none ${className}`}>
-      <div className="max-w-[480px] md:max-w-2xl mx-auto pointer-events-auto space-y-0">
+      <div className="max-w-[480px] mx-auto pointer-events-auto space-y-0">
         {/* Floating Quick Basket Bar */}
         {totalItemCount > 0 && currentTab !== 'basket' && (
           <div className="px-3 pb-1 pt-1.5">
@@ -89,6 +89,7 @@ export default function BottomNav({ activeTab, onSelectTab, className = '' }: Bo
         >
           {/* Tab 0: Home */}
           <Link
+            prefetch={false}
             href="/home"
             onClick={(e) => handleTabClick('home', e)}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg transition-all press-scale text-center cursor-pointer ${
@@ -103,6 +104,7 @@ export default function BottomNav({ activeTab, onSelectTab, className = '' }: Bo
 
           {/* Tab 1: Menu */}
           <Link
+            prefetch={false}
             href="/menu"
             onClick={(e) => handleTabClick('menu', e)}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg transition-all press-scale text-center cursor-pointer ${
@@ -117,6 +119,7 @@ export default function BottomNav({ activeTab, onSelectTab, className = '' }: Bo
 
           {/* Tab 2: Offer (Background #FCFCFC) */}
           <Link
+            prefetch={false}
             href="/offer"
             onClick={(e) => handleTabClick('offer', e)}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg transition-all press-scale text-center cursor-pointer border border-gray-200/80 bg-[#FCFCFC] dark:bg-neutral-900 dark:border-neutral-700 ${
@@ -131,6 +134,7 @@ export default function BottomNav({ activeTab, onSelectTab, className = '' }: Bo
 
           {/* Tab 3: Order Status */}
           <Link
+            prefetch={false}
             href={latestOrderId ? `/order/${latestOrderId}` : '/order'}
             onClick={(e) => handleTabClick('status', e)}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg transition-all press-scale text-center relative cursor-pointer ${
@@ -150,6 +154,7 @@ export default function BottomNav({ activeTab, onSelectTab, className = '' }: Bo
 
           {/* Tab 4: Basket */}
           <Link
+            prefetch={false}
             href="/checkout"
             onClick={(e) => handleTabClick('basket', e)}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg transition-all press-scale text-center relative cursor-pointer ${

@@ -39,8 +39,11 @@ export default function OrderStatusSearchPage() {
   return (
     <div className="customer-page min-h-dvh bg-[#F7F9F8] pb-24 dark:bg-neutral-950">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md py-3.5 border-b border-gray-100 shadow-2xs dark:bg-neutral-950/95 dark:border-neutral-800">
-        <div className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 md:px-6">
+      <header
+        style={{ top: 'var(--pwa-banner-offset, 0px)' }}
+        className="sticky z-30 bg-white/95 backdrop-blur-md py-3.5 border-b border-gray-100 shadow-2xs dark:bg-neutral-950/95 dark:border-neutral-800"
+      >
+        <div className="mx-auto flex w-full max-w-[480px] items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -62,7 +65,7 @@ export default function OrderStatusSearchPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl px-4 md:px-6 py-6 space-y-6">
+      <main className="mx-auto w-full max-w-[480px] px-4 py-6 space-y-6">
         {/* Latest Active Order Banner */}
         {latestOrderId && (
           <div className="bg-gradient-to-br from-[#04A328] to-[#05C12F] text-white rounded-3xl p-5 shadow-lg shadow-[#05C12F]/20 space-y-4">
@@ -125,7 +128,7 @@ export default function OrderStatusSearchPage() {
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1 dark:text-gray-500">
               Recent Orders on this Device
             </h3>
-            <div className="grid gap-2 md:grid-cols-2">
+            <div className="grid gap-2">
               {recentOrders.map((id, index) => (
                 <Link
                   key={id}

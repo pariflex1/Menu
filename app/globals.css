@@ -57,6 +57,9 @@
     font-family: var(--font-inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* `clip` hides horizontal overflow without creating a scroll container, so position: sticky keeps working */
+    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {
@@ -65,17 +68,12 @@
     position: relative;
   }
 
-  /* Customer-facing pages share a fluid, centered layout */
+  /* Customer-facing pages use one fixed mobile viewport, centered if opened on a larger screen */
   .customer-page {
     width: 100%;
+    max-width: 480px;
     margin: 0 auto;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.03);
-  }
-
-  @media (min-width: 1024px) {
-    .customer-page {
-      box-shadow: none;
-    }
   }
 
   html.dark .customer-page {

@@ -54,10 +54,14 @@ export async function writeOfferBanners(banners: OfferBanner[]): Promise<void> {
   }
 }
 
-export async function uploadBannerImage(buffer: Buffer, filename: string): Promise<string> {
+export async function uploadBannerImage(
+  body: ArrayBuffer,
+  filename: string,
+  contentType = 'image/webp',
+): Promise<string> {
   const supabase = await ensureBucket();
-  const { error } = await supabase.storage.from(BUCKET).upload(filename, buffer, {
-    contentType: 'image/webp',
+  const { error } = await supabase.storage.from(BUCKET).upload(filename, body, {
+    contentType,
     cacheControl: '31536000',
     upsert: false,
   });

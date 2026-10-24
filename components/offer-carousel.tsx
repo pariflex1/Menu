@@ -107,7 +107,7 @@ export default function OfferCarousel({ onSelectCategory }: Props) {
           return (
             <div
               key={banner.id || index}
-              className="w-full shrink-0 relative aspect-[21/9] sm:aspect-[24/9] bg-gray-900 overflow-hidden"
+              className="w-full shrink-0 relative aspect-[21/9] bg-gray-900 overflow-hidden"
             >
               <Image
                 src={banner.image_url}
@@ -120,18 +120,18 @@ export default function OfferCarousel({ onSelectCategory }: Props) {
               />
 
               {/* Gradient Scrim Overlay for crisp contrast */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-3.5 sm:p-4 text-white">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-3.5 text-white">
                 <div className="space-y-1">
                   {banner.badge && (
-                    <span className="inline-block bg-[#05C12F] text-white text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-xs tracking-wider border border-white/20">
+                    <span className="inline-block bg-[#05C12F] text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-xs tracking-wider border border-white/20">
                       {banner.badge}
                     </span>
                   )}
-                  <h3 className="font-extrabold text-sm sm:text-base leading-tight drop-shadow-xs line-clamp-1">
+                  <h3 className="font-extrabold text-sm leading-tight drop-shadow-xs line-clamp-1">
                     {banner.title}
                   </h3>
                   {banner.subtitle && (
-                    <p className="text-[10px] sm:text-xs text-gray-200 line-clamp-1 font-normal opacity-95">
+                    <p className="text-[10px] text-gray-200 line-clamp-1 font-normal opacity-95">
                       {banner.subtitle}
                     </p>
                   )}

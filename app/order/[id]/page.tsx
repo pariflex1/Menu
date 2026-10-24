@@ -287,7 +287,10 @@ export default function OrderTrackingPage() {
   return (
     <div className="customer-page min-h-dvh bg-[#F4F9F4] pb-24 font-sans dark:bg-neutral-950">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-emerald-100 shadow-2xs dark:bg-neutral-950 dark:border-neutral-800">
+      <header
+        style={{ top: 'var(--pwa-banner-offset, 0px)' }}
+        className="sticky z-10 bg-white border-b border-emerald-100 shadow-2xs dark:bg-neutral-950 dark:border-neutral-800"
+      >
         <div className="mx-auto w-full max-w-3xl px-4 md:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
@@ -371,30 +374,31 @@ export default function OrderTrackingPage() {
 
         {/* ── Interactive Order Journey ── */}
         {!isCancelled && (
-          <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-emerald-100 dark:border-neutral-800 shadow-md overflow-hidden">
+          <div className="relative bg-white dark:bg-neutral-900 rounded-3xl border border-emerald-100 dark:border-neutral-800 shadow-lg shadow-emerald-100/60 dark:shadow-black/40 overflow-hidden">
             {/* Live summary with animated ring */}
-            <div className="relative bg-gradient-to-br from-emerald-50/90 via-white to-white px-5 pt-4 pb-4 border-b border-emerald-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900 dark:border-neutral-800">
+            <div className="relative bg-gradient-to-br from-emerald-50/90 via-white to-white px-5 pt-5 pb-5 border-b border-emerald-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900 dark:border-neutral-800">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-extrabold uppercase tracking-widest text-emerald-900 dark:text-emerald-200">Order Journey</h3>
+                <h3 className="text-base md:text-lg font-black uppercase tracking-[0.16em] text-emerald-900 dark:text-emerald-200">Order Journey</h3>
                 {isCompleted ? (
-                  <span className="flex items-center gap-1 text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="flex items-center gap-1.5 text-xs font-black bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     ALL DONE
                   </span>
                 ) : (
-                  <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/70/80 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  <span className="flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/70 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     15-25 min
                   </span>
                 )}
               </div>
 
-              <div className="mt-3 flex items-center gap-4">
-                <div className="relative w-[76px] h-[76px] shrink-0">
+              <div className="mt-4 flex items-center gap-5">
+                <div className="relative w-[92px] h-[92px] shrink-0">
                   <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
                     <defs>
                       <linearGradient id="order-progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#34d399" />
-                        <stop offset="55%" stopColor="#10b981" />
+                        <stop offset="0%" stopColor="#6ee7b7" />
+                        <stop offset="45%" stopColor="#10b981" />
                         <stop offset="100%" stopColor="#047857" />
                       </linearGradient>
                     </defs>
@@ -409,35 +413,40 @@ export default function OrderTrackingPage() {
                       strokeLinecap="round"
                       strokeDasharray={ringCircumference}
                       strokeDashoffset={ringCircumference - (ringCircumference * ringPercent) / 100}
-                      className="transition-all duration-1000 ease-out"
+                      className="transition-all duration-1000 ease-out drop-shadow-[0_0_6px_rgba(16,185,129,0.45)]"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-200">
-                      <info.Icon className="w-5 h-5" strokeWidth={2.2} />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shadow-lg shadow-emerald-300/60 dark:shadow-emerald-950/60">
+                      <info.Icon className="w-6 h-6" strokeWidth={2.2} />
                     </div>
                   </div>
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black text-slate-900 dark:text-gray-100 leading-none">{ringPercent}%</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">complete</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-black text-slate-900 dark:text-gray-100 leading-none tabular-nums tracking-tight">{ringPercent}%</span>
+                    <span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">complete</span>
                   </div>
-                  <p className="text-sm font-extrabold text-slate-800 dark:text-gray-200 mt-1 leading-tight">{STEPS[currentStep].label}</p>
-                  <p className="text-[11px] text-slate-500 dark:text-gray-400 font-medium leading-snug line-clamp-2">{STEPS[currentStep].desc}</p>
+                  <p className="text-lg font-black text-slate-900 dark:text-gray-100 mt-1.5 leading-tight">{STEPS[currentStep].label}</p>
+                  <p className="text-sm text-slate-500 dark:text-gray-400 font-medium leading-snug line-clamp-2 mt-0.5">{STEPS[currentStep].desc}</p>
                 </div>
               </div>
             </div>
 
             {/* Interactive horizontal rail */}
-            <div className="px-3 pt-5 pb-3">
+            <div className="px-3 pt-6 pb-4">
               <div className="relative">
-                <div className="absolute top-5 left-[12.5%] right-[12.5%] h-1 -translate-y-1/2 rounded-full bg-slate-100 dark:bg-neutral-800 overflow-hidden">
+                <div className="absolute top-6 left-[12.5%] right-[12.5%] h-2 -translate-y-1/2 rounded-full bg-slate-100 dark:bg-neutral-800 shadow-inner">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 transition-all duration-1000 ease-out"
+                    className="relative h-full rounded-full bg-gradient-to-r from-emerald-300 via-emerald-500 to-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.45)] transition-all duration-1000 ease-out"
                     style={{ width: `${railPercent}%` }}
-                  />
+                  >
+                    <span className="absolute inset-0 rounded-full bg-[linear-gradient(110deg,transparent_20%,rgba(255,255,255,0.55)_40%,transparent_60%)] bg-[length:200%_100%] animate-[shimmer_2.4s_linear_infinite]" />
+                    {railPercent > 0 && railPercent < 100 && (
+                      <span className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white border-[3px] border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+                    )}
+                  </div>
                 </div>
 
                 <div className="relative grid grid-cols-4">
@@ -452,11 +461,11 @@ export default function OrderTrackingPage() {
                         key={step.id}
                         onClick={() => setInspectedStep(idx)}
                         aria-pressed={isSelected}
-                        className="relative flex flex-col items-center gap-1.5 px-1 cursor-pointer group"
+                        className="relative flex flex-col items-center gap-2 px-1 cursor-pointer group"
                       >
-                        <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                        <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
                           isPassed
-                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200'
+                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-300/60 dark:shadow-emerald-950/50'
                             : isCurrent
                             ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white ring-4 ring-emerald-100 dark:ring-emerald-900 shadow-lg shadow-emerald-300/50 dark:shadow-emerald-950/50 scale-110'
                             : 'bg-slate-100 dark:bg-neutral-800 text-slate-400 dark:text-gray-500 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/50 group-hover:text-emerald-500'
@@ -465,12 +474,12 @@ export default function OrderTrackingPage() {
                             <span className="absolute -inset-1.5 rounded-2xl bg-emerald-400/25 animate-ping" />
                           )}
                           {isPassed ? (
-                            <Check className="w-5 h-5 relative" strokeWidth={3} />
+                            <Check className="w-6 h-6 relative" strokeWidth={3} />
                           ) : (
-                            <step.Icon className="w-5 h-5 relative" strokeWidth={isCurrent ? 2.3 : 1.9} />
+                            <step.Icon className="w-6 h-6 relative" strokeWidth={isCurrent ? 2.3 : 1.9} />
                           )}
                         </div>
-                        <span className={`text-[10px] leading-none text-center transition-colors ${
+                        <span className={`text-xs sm:text-[13px] leading-none text-center transition-colors tracking-wide ${
                           isCurrent
                             ? 'text-emerald-800 dark:text-emerald-300 font-black'
                             : isPassed
@@ -489,12 +498,12 @@ export default function OrderTrackingPage() {
             </div>
 
             {/* Tap-to-inspect step detail */}
-            <div className={`mx-4 mb-4 rounded-2xl border p-3.5 flex items-start gap-3 transition-colors ${
+            <div className={`mx-4 mb-4 rounded-2xl border p-4 flex items-start gap-3 transition-colors ${
               inspectedIndex === currentStep
                 ? 'bg-emerald-50/70 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800'
                 : 'bg-slate-50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700'
             }`}>
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                 inspectedIndex === currentStep
                   ? 'bg-emerald-600 text-white'
                   : 'bg-white dark:bg-neutral-900 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
@@ -503,24 +512,24 @@ export default function OrderTrackingPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-xs font-black text-slate-900 dark:text-gray-100">{inspectedInfo.label}</p>
+                  <p className="text-sm font-black text-slate-900 dark:text-gray-100">{inspectedInfo.label}</p>
                   {inspectedIndex === currentStep ? (
-                    <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/70 px-1.5 py-0.5 rounded-full">
-                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> Live
+                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/70 px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
                     </span>
                   ) : (
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-neutral-700">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 bg-white dark:bg-neutral-900 px-2 py-0.5 rounded-full border border-slate-200 dark:border-neutral-700">
                       {inspectedIndex < currentStep ? 'Done' : 'Next'}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-600 dark:text-gray-400 font-medium leading-snug mt-0.5">{inspectedInfo.desc}</p>
+                <p className="text-sm text-slate-600 dark:text-gray-400 font-medium leading-snug mt-1">{inspectedInfo.desc}</p>
               </div>
               {inspectedStep !== null && inspectedStep !== currentStep && (
                 <button
                   type="button"
                   onClick={() => setInspectedStep(null)}
-                  className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-white dark:bg-neutral-900 border border-emerald-200 dark:border-emerald-800 px-2 py-1 rounded-full shrink-0 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
+                  className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-white dark:bg-neutral-900 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full shrink-0 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
                 >
                   Live
                 </button>

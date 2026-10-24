@@ -15,3 +15,7 @@ next-env.d.ts
 *.tsbuildinfo
 .vercel
 .env*
+.open-next
+.dev.vars
+.wrangler
+cloudflare-env.d.ts

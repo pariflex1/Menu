@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, memo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useBucket, setPriceCache } from '@/lib/hooks/use-bucket';
 import Image from 'next/image';
@@ -84,17 +84,17 @@ function getCategoryIcon(name: string): LucideIcon {
 function CategoryBanner({ category }: { category: Category }) {
   if (category.image_url) {
     return (
-      <div className="relative h-32 sm:h-40 w-full rounded-2xl overflow-hidden shadow-sm bg-gray-900">
+      <div className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm bg-gray-900">
         <Image
           src={category.image_url}
           alt={category.name}
           fill
-          sizes="(max-width: 1280px) 100vw, 1152px"
+          sizes="480px"
           className="object-cover"
           unoptimized={category.image_url.startsWith('http')}
         />
-        <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-center px-6">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-wide text-white drop-shadow-md">
+        <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-center px-5">
+          <h2 className="text-2xl font-bold tracking-wide text-white drop-shadow-md">
             {category.name}
           </h2>
         </div>
@@ -103,38 +103,41 @@ function CategoryBanner({ category }: { category: Category }) {
   }
 
   return (
-    <div className="w-full bg-[#05C12F] text-white rounded-2xl py-4 sm:py-5 px-6 shadow-sm flex items-center justify-center text-center">
-      <h2 className="text-2xl sm:text-3xl font-bold tracking-wide">
+    <div className="w-full bg-[#05C12F] text-white rounded-2xl py-4 px-5 shadow-sm flex items-center justify-center text-center">
+      <h2 className="text-2xl font-bold tracking-wide">
         {category.name}
       </h2>
     </div>
   );
 }
 
-// Menu Card: Immediate rendering, NO reveal effect, NO delayed entrance
-function CustomMenuCard({
+// Menu Card: memoized so unrelated cards never re-render on bucket changes
+const CustomMenuCard = memo(function CustomMenuCard({
   item,
+  quantity,
   onOpenDetail,
+  onAdd,
+  onUpdateQuantity,
 }: {
   item: MenuItem;
+  quantity: number;
   onOpenDetail: (item: MenuItem) => void;
+  onAdd: (item: MenuItem) => void;
+  onUpdateQuantity: (id: string, quantity: number) => void;
 }) {
-  const { items: bucketItems, addItem, updateQuantity } = useBucket();
-  const bucketItem = bucketItems.find((b) => b.menu_item_id === item.id);
-  const quantity = bucketItem?.quantity || 0;
   const currentTotalAmount = item.price * (quantity > 0 ? quantity : 1);
 
   return (
     <div
       onClick={() => onOpenDetail(item)}
-      className="bg-white border border-gray-200 hover:border-gray-300 rounded-2xl overflow-hidden shadow-2xs hover:shadow-xs transition-shadow flex items-stretch cursor-pointer group dark:bg-neutral-900 dark:border-neutral-800 dark:hover:border-neutral-700"
+      className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs flex items-stretch cursor-pointer dark:bg-neutral-900 dark:border-neutral-800"
     >
       {/* Left Details */}
-      <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col justify-center gap-1">
-        <h3 className="font-semibold text-black text-[19px] sm:text-[21px] leading-snug tracking-tight dark:text-gray-100">
+      <div className="flex-1 min-w-0 p-3.5 flex flex-col justify-center gap-1">
+        <h3 className="font-semibold text-black text-[18px] leading-snug tracking-tight dark:text-gray-100">
           {item.name}
         </h3>
-        <p className="text-[13px] sm:text-[14px] text-gray-500 font-normal leading-snug line-clamp-2 dark:text-gray-400">
+        <p className="text-[12.5px] text-gray-500 font-normal leading-snug line-clamp-2 dark:text-gray-400">
           {item.description || 'Prepared fresh with premium ingredients'}
         </p>
       </div>
@@ -142,38 +145,35 @@ function CustomMenuCard({
       {/* Right Column */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-[90px] sm:w-[100px] shrink-0 flex flex-col border-l border-gray-100 select-none dark:border-neutral-800"
+        className="w-[88px] shrink-0 flex flex-col border-l border-gray-100 select-none dark:border-neutral-800"
       >
         <div className="flex-1 bg-[#F0F0F0] flex flex-col items-center justify-center px-2 py-3 text-center dark:bg-neutral-800">
-          <span className="font-semibold text-black text-[18px] sm:text-[20px] tracking-tight leading-none dark:text-gray-100">
+          <span className="font-semibold text-black text-[17px] tracking-tight leading-none dark:text-gray-100">
             ₹{currentTotalAmount.toFixed(0)}
           </span>
         </div>
 
         {quantity === 0 ? (
           <button
-            onClick={() => {
-              setPriceCache(item.id, item.price);
-              addItem({ menu_item_id: item.id, quantity: 1, unit_price: item.price });
-            }}
-            className="flex-1 bg-[#05C12F] hover:bg-[#04A328] active:bg-[#038723] text-white font-semibold text-[15px] flex items-center justify-center py-3 px-2 transition-colors cursor-pointer"
+            onClick={() => onAdd(item)}
+            className="flex-1 bg-[#05C12F] active:bg-[#038723] text-white font-semibold text-[15px] flex items-center justify-center py-3 px-2 transition-colors cursor-pointer"
           >
             + Add
           </button>
         ) : (
           <div className="flex-1 bg-[#05C12F] text-white flex items-center justify-between px-1.5 py-2">
             <button
-              onClick={() => updateQuantity(item.id, quantity - 1)}
+              onClick={() => onUpdateQuantity(item.id, quantity - 1)}
               aria-label="Decrease quantity"
-              className="w-7 h-full flex items-center justify-center font-semibold text-lg hover:bg-[#04A328] rounded transition-colors cursor-pointer"
+              className="w-7 h-full flex items-center justify-center font-semibold text-lg active:bg-[#04A328] rounded transition-colors cursor-pointer"
             >
               −
             </button>
             <span className="font-semibold text-base px-1">{quantity}</span>
             <button
-              onClick={() => updateQuantity(item.id, quantity + 1)}
+              onClick={() => onUpdateQuantity(item.id, quantity + 1)}
               aria-label="Increase quantity"
-              className="w-7 h-full flex items-center justify-center font-semibold text-lg hover:bg-[#04A328] rounded transition-colors cursor-pointer"
+              className="w-7 h-full flex items-center justify-center font-semibold text-lg active:bg-[#04A328] rounded transition-colors cursor-pointer"
             >
               +
             </button>
@@ -182,7 +182,7 @@ function CustomMenuCard({
       </div>
     </div>
   );
-}
+});
 
 function DishDetailModal({
   item,
@@ -198,8 +198,8 @@ function DishDetailModal({
   const currentTotalAmount = item.price * (quantity > 0 ? quantity : 1);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full overflow-hidden shadow-2xl max-h-[90vh] flex flex-col border border-gray-100 dark:bg-neutral-900 dark:border-neutral-800">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs p-0 animate-in fade-in duration-200">
+      <div className="bg-white rounded-t-3xl max-w-[480px] w-full overflow-hidden shadow-2xl max-h-[90dvh] flex flex-col border border-gray-100 dark:bg-neutral-900 dark:border-neutral-800">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between dark:border-neutral-800">
           <span className="text-[11px] font-semibold tracking-wider text-[#05C12F] uppercase dark:text-emerald-400">
             Krishna Anandam
@@ -274,6 +274,9 @@ function MenuInner() {
   const [activeCategoryTab, setActiveCategoryTab] = useState<string>(catQueryParam || 'all');
   const [selectedDishDetail, setSelectedDishDetail] = useState<MenuItem | null>(null);
   const categoryNavRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const scrollTickRef = useRef(false);
+  const { items: bucketItems, addItem, updateQuantity } = useBucket();
 
   useEffect(() => {
     let hasCached = false;
@@ -290,9 +293,12 @@ function MenuInner() {
       }
     } catch { /* ignore */ }
 
+    const controller = new AbortController();
+
     async function fetchMenu() {
       try {
-        const res = await fetch('/api/menu?refresh=true', { cache: 'no-store' });
+        // No refresh bypass: the route's short cache keeps navigation instant.
+        const res = await fetch('/api/menu', { signal: controller.signal });
         const data = await res.json();
         if (!res.ok || !data.categories) {
           if (!hasCached) setError('Failed to load menu. Please try again.');
@@ -302,12 +308,13 @@ function MenuInner() {
         if (data.restaurant) setRestaurant(data.restaurant);
         try { localStorage.setItem(LOCAL_STORAGE_MENU_KEY, JSON.stringify(data)); } catch { /* ignore */ }
       } catch {
-        if (!hasCached) setError('Failed to connect to server.');
+        if (!controller.signal.aborted && !hasCached) setError('Failed to connect to server.');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
     fetchMenu();
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -317,24 +324,26 @@ function MenuInner() {
     );
     if (target) {
       setActiveCategoryTab(target.id);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         document.getElementById(`cat-section-${target.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 120);
+      return () => clearTimeout(timer);
     }
   }, [catQueryParam, categories]);
 
   useEffect(() => {
     if (searchQuery || categories.length === 0) return;
 
-    const handleScroll = () => {
+    const updateActiveTab = () => {
+      scrollTickRef.current = false;
+
+      // Tabs sit directly below the sticky search header.
+      const offset = (headerRef.current?.getBoundingClientRect().bottom ?? 64) + 12;
+
       if (window.scrollY <= 4) {
         setActiveCategoryTab('all');
         return;
       }
-
-      const nav = categoryNavRef.current;
-      const header = nav?.parentElement;
-      const offset = (header?.getBoundingClientRect().bottom ?? 120) + 48;
 
       let current = 'all';
       for (const cat of categories) {
@@ -347,28 +356,72 @@ function MenuInner() {
       setActiveCategoryTab((prev) => (prev === current ? prev : current));
     };
 
+    const handleScroll = () => {
+      if (scrollTickRef.current) return;
+      scrollTickRef.current = true;
+      requestAnimationFrame(updateActiveTab);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+    updateActiveTab();
     return () => window.removeEventListener('scroll', handleScroll);
   }, [categories, searchQuery]);
 
-  const handleJumpToCategory = (catId: string) => {
+  const handleJumpToCategory = useCallback((catId: string) => {
     setActiveCategoryTab(catId);
     if (catId === 'all') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     document.getElementById(`cat-section-${catId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    const btn = categoryNavRef.current?.querySelector(`[data-cat="${catId}"]`) as HTMLElement;
-    btn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  };
+  }, []);
 
-  const totalDishesCount = categories.reduce((s, c) => s + (c.items?.length || 0), 0);
+  // Keep the active category pill centered inside the horizontal scroll strip.
+  useEffect(() => {
+    const nav = categoryNavRef.current;
+    if (!nav) return;
+    const active = nav.querySelector<HTMLElement>(`[data-cat="${activeCategoryTab}"]`);
+    if (!active) return;
+    const navRect = nav.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    const targetLeft =
+      nav.scrollLeft + (activeRect.left - navRect.left) - nav.clientWidth / 2 + activeRect.width / 2;
+    nav.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+  }, [activeCategoryTab]);
 
-  const filteredCategories = categories
-    .map((cat) => {
-      if (!searchQuery.trim()) return cat;
-      const q = searchQuery.toLowerCase();
-      return { ...cat, items: cat.items.filter((item) => item.name.toLowerCase().includes(q) || item.description?.toLowerCase().includes(q)) };
-    })
-    .filter((cat) => cat.items.length > 0);
+  const handleOpenDetail = useCallback((item: MenuItem) => {
+    setSelectedDishDetail(item);
+  }, []);
+
+  const handleAddItem = useCallback((item: MenuItem) => {
+    setPriceCache(item.id, item.price);
+    addItem({ menu_item_id: item.id, quantity: 1, unit_price: item.price });
+  }, [addItem]);
+
+  const quantityById = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const entry of bucketItems) map[entry.menu_item_id] = entry.quantity;
+    return map;
+  }, [bucketItems]);
+
+  const totalDishesCount = useMemo(
+    () => categories.reduce((sum, category) => sum + (category.items?.length || 0), 0),
+    [categories]
+  );
+
+  const filteredCategories = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return categories
+      .map((cat) => {
+        if (!query) return cat;
+        return {
+          ...cat,
+          items: cat.items.filter(
+            (item) =>
+              item.name.toLowerCase().includes(query) ||
+              item.description?.toLowerCase().includes(query)
+          ),
+        };
+      })
+      .filter((cat) => cat.items.length > 0);
+  }, [categories, searchQuery]);
 
   if (error && !categories.length) {
     return (
@@ -381,18 +434,21 @@ function MenuInner() {
 
   return (
     <div className="customer-page min-h-dvh bg-[#FAFAFA] pb-24 font-sans dark:bg-neutral-950">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md pt-3.5 pb-2.5 border-b border-gray-200/90 shadow-2xs dark:bg-neutral-950/95 dark:border-neutral-800">
-        <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+      <header
+        ref={headerRef}
+        style={{ top: 'var(--pwa-banner-offset, 0px)' }}
+        className="sticky z-30 bg-white/95 backdrop-blur-md pt-3 pb-2.5 border-b border-gray-200/90 shadow-2xs dark:bg-neutral-950/95 dark:border-neutral-800"
+      >
+        <div className="mx-auto w-full max-w-[480px] px-4">
           <div className="flex items-center gap-2.5">
           {/* Brand Logo Avatar */}
-          <Link href="/" aria-label="Krishna Anandam" className="w-9 h-9 rounded-full overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs dark:border-neutral-700">
+          <Link href="/" prefetch={false} aria-label="Krishna Anandam" className="w-9 h-9 rounded-full overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs dark:border-neutral-700">
             <Image
-              src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+              src="/icons/logo.webp"
               alt="Krishna Anandam"
               width={36}
               height={36}
               className="w-full h-full object-cover"
-              unoptimized
             />
           </Link>
 
@@ -418,24 +474,30 @@ function MenuInner() {
 
           <ThemeToggle className="bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-gray-300" />
 
-          <Link href="/checkout" aria-label="Cart" className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center shrink-0 transition-colors dark:bg-neutral-800 dark:hover:bg-neutral-700">
+          <Link href="/checkout" prefetch={false} aria-label="Cart" className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center shrink-0 transition-colors dark:bg-neutral-800 dark:hover:bg-neutral-700">
             <ShoppingCart className="w-4 h-4 text-gray-600 dark:text-gray-300" strokeWidth={2} />
           </Link>
         </div>
+        </div>
+      </header>
 
-        {/* Category Tabs: Theme dark green background for active tab (#05C12F) + Offer tab at the end */}
-        {!searchQuery && categories.length > 0 && (
-          <div ref={categoryNavRef} className="flex gap-2 overflow-x-auto no-scrollbar pt-3 items-center">
+      {/* Category Tabs: horizontally scrollable strip */}
+      {!searchQuery && categories.length > 0 && (
+        <div className="mx-auto w-full max-w-[480px] px-4 pt-3">
+          <div
+            ref={categoryNavRef}
+            className="no-scrollbar -mx-1 flex items-center gap-2 overflow-x-auto overscroll-x-contain scroll-smooth px-1 py-1"
+          >
             <button
               data-cat="all"
               onClick={() => handleJumpToCategory('all')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all press-scale shrink-0 cursor-pointer ${
+              className={`flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all press-scale cursor-pointer ${
                 activeCategoryTab === 'all'
                   ? 'bg-[#05C12F] text-white shadow-xs dark:bg-emerald-700'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700'
               }`}
             >
-              <LayoutGrid className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} />
+              <LayoutGrid className="w-3 h-3 shrink-0" strokeWidth={2.5} />
               <span>All ({totalDishesCount})</span>
             </button>
             {categories.map((cat) => {
@@ -446,36 +508,36 @@ function MenuInner() {
                   key={cat.id}
                   data-cat={cat.id}
                   onClick={() => handleJumpToCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all press-scale shrink-0 cursor-pointer ${
+                  className={`flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all press-scale cursor-pointer ${
                     isSel
                       ? 'bg-[#05C12F] text-white shadow-xs dark:bg-emerald-700'
                       : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-800'
                   }`}
                 >
-                  <CategoryIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} />
-                  <span>{cat.name}</span>
+                  <CategoryIcon className="w-3 h-3 shrink-0" strokeWidth={2.5} />
+                  <span className="whitespace-nowrap">{cat.name}</span>
                 </button>
               );
             })}
 
             <Link
               href="/offer"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 border border-gray-200 bg-[#FCFCFC] hover:bg-gray-50 press-scale shrink-0 cursor-pointer dark:bg-neutral-900 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-800"
+              prefetch={false}
+              className="flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap text-gray-700 border border-gray-200 bg-[#FCFCFC] hover:bg-gray-50 press-scale cursor-pointer dark:bg-neutral-900 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-800"
             >
-              <Gift className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} />
+              <Gift className="w-3 h-3 shrink-0" strokeWidth={2.5} />
               <span>Offers</span>
             </Link>
           </div>
-        )}
         </div>
-      </header>
+      )}
 
-      <main className="mx-auto w-full max-w-6xl px-4 md:px-6 pt-4 space-y-8">
+      <main className="mx-auto w-full max-w-[480px] px-4 pt-4 space-y-7">
         {loading && !categories.length && (
           <div className="space-y-4 pt-2">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
-                <div className="h-16 bg-[#05C12F]/20 rounded-2xl animate-pulse md:col-span-2 xl:col-span-3" />
+              <div key={n} className="space-y-2.5">
+                <div className="h-14 bg-[#05C12F]/20 rounded-2xl animate-pulse" />
                 <div className="h-[88px] bg-white rounded-2xl border border-gray-200 animate-pulse dark:bg-neutral-900 dark:border-neutral-800" />
                 <div className="h-[88px] bg-white rounded-2xl border border-gray-200 animate-pulse dark:bg-neutral-900 dark:border-neutral-800" />
               </div>
@@ -501,14 +563,17 @@ function MenuInner() {
         )}
 
         {filteredCategories.map((category) => (
-          <section key={category.id} id={`cat-section-${category.id}`} className="space-y-3 scroll-mt-36">
+          <section key={category.id} id={`cat-section-${category.id}`} className="space-y-3 scroll-mt-[4.75rem]">
             <CategoryBanner category={category} />
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2.5">
               {category.items.map((item) => (
                 <CustomMenuCard
                   key={item.id}
                   item={item}
-                  onOpenDetail={(it) => setSelectedDishDetail(it)}
+                  quantity={quantityById[item.id] || 0}
+                  onOpenDetail={handleOpenDetail}
+                  onAdd={handleAddItem}
+                  onUpdateQuantity={updateQuantity}
                 />
               ))}
             </div>
@@ -519,6 +584,7 @@ function MenuInner() {
         <section className="pt-4">
           <Link
             href="/offer"
+            prefetch={false}
             className="w-full bg-gradient-to-r from-[#05C12F] to-[#039323] text-white p-5 rounded-2xl flex items-center justify-between shadow-md hover:shadow-lg transition-all group"
           >
             <div className="space-y-1">

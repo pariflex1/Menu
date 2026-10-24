@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "krishna-anandam-menu",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "krishna-anandam-menu"
+    }
+  ],
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://mjgneisuyrlvvcjtdaaz.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZ25laXN1eXJsdnZjanRkYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgxNTQsImV4cCI6MjEwMjI4NDE1NH0.mewZu8lT1EZ98SQORL2Cy0tpH719IaHvqKiv-Oy1FbI",
+    "NEXT_PUBLIC_SITE_URL": "https://menu.krishnaanandam.in"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

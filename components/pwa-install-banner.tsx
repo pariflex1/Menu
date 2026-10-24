@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
 import Image from 'next/image';
 import { Download, Smartphone, Check, Share, Plus, Home } from 'lucide-react';
 
@@ -201,12 +201,12 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       {guide && !isInstalled && (
-        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 space-y-5 shadow-2xl animate-in slide-in-from-bottom duration-300 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-[480px] rounded-t-3xl p-6 space-y-5 shadow-2xl animate-in slide-in-from-bottom duration-300 dark:bg-neutral-900">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white border border-gray-200 shrink-0 shadow-sm">
                 <Image
-                  src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+                  src="/icons/logo.webp"
                   alt="Krishna Anandam"
                   width={48}
                   height={48}
@@ -271,6 +271,22 @@ export function usePwaInstall() {
 export default function PwaInstallBanner() {
   const { canInstall, isInstalled, triggerInstall } = usePwaInstall();
   const [installing, setInstalling] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  // Publish the banner height so sticky headers can sit right below it.
+  useEffect(() => {
+    if (isInstalled || !canInstall) return;
+    const root = document.documentElement;
+    const updateOffset = () => {
+      root.style.setProperty('--pwa-banner-offset', `${bannerRef.current?.offsetHeight ?? 0}px`);
+    };
+    updateOffset();
+    window.addEventListener('resize', updateOffset);
+    return () => {
+      window.removeEventListener('resize', updateOffset);
+      root.style.removeProperty('--pwa-banner-offset');
+    };
+  }, [isInstalled, canInstall]);
 
   if (isInstalled || !canInstall) return null;
 
@@ -281,12 +297,12 @@ export default function PwaInstallBanner() {
   };
 
   return (
-    <div className="sticky top-0 z-[60] w-full bg-yellow-400 text-black px-3 py-2 shadow-md border-b border-yellow-500/70">
-      <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+    <div ref={bannerRef} className="sticky top-0 z-[60] w-full bg-yellow-400 text-black px-3 py-2 shadow-md border-b border-yellow-500/70">
+      <div className="max-w-[480px] mx-auto flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-xl overflow-hidden bg-white shrink-0 shadow-sm border border-black/10">
             <Image
-              src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+              src="/icons/logo.webp"
               alt="Krishna Anandam"
               width={32}
               height={32}
@@ -371,7 +387,7 @@ export function PwaAdminBanner() {
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="w-8 h-8 rounded-xl overflow-hidden bg-white shrink-0 border border-white/20">
           <Image
-            src="https://krishnaanandam.in/wp-content/uploads/2026/08/Hotel-Krsihna-Anandam-Logo.webp"
+            src="/icons/logo.webp"
             alt="App"
             width={32}
             height={32}

@@ -158,8 +158,8 @@ export default function QRScannerModal({ isOpen, onClose, onSuccess, required = 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm" style={{ animation: 'fadeIn 0.2s ease' }}>
-      <div className="relative w-full sm:max-w-sm overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl border border-emerald-100 dark:bg-neutral-900 dark:border-neutral-800">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm" style={{ animation: 'fadeIn 0.2s ease' }}>
+      <div className="relative w-full max-w-[480px] overflow-hidden rounded-t-3xl bg-white shadow-2xl border border-emerald-100 dark:bg-neutral-900 dark:border-neutral-800">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-emerald-100 bg-[#F4F9F4] px-5 py-4 dark:bg-neutral-900 dark:border-neutral-800">
           <div className="flex items-center gap-2">

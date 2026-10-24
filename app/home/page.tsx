@@ -1,13 +1,5 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
 import MenuCategoriesHome from '@/components/menu-categories-home';
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['500', '700', '800'],
-  variable: '--font-jakarta',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'Menu Categories | Krishna Anandam',
@@ -15,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <MenuCategoriesHome fontClassName={jakarta.variable} />;
+  return <MenuCategoriesHome />;
 }

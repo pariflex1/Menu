@@ -324,8 +324,11 @@ export default function CheckoutPage() {
   return (
     <div className="customer-page min-h-dvh bg-white pb-32 font-sans dark:bg-neutral-950">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-2xs dark:bg-neutral-950 dark:border-neutral-800">
-        <div className="mx-auto w-full max-w-4xl px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
+      <header
+        style={{ top: 'var(--pwa-banner-offset, 0px)' }}
+        className="sticky z-10 bg-white border-b border-gray-200 shadow-2xs dark:bg-neutral-950 dark:border-neutral-800"
+      >
+        <div className="mx-auto w-full max-w-[480px] px-4 py-3.5 flex items-center justify-between gap-3">
           <Link
             href="/"
             className="text-base font-medium text-black dark:text-gray-100 hover:bg-gray-100 bg-gray-50 px-3.5 py-1.5 rounded-lg border border-gray-300 transition-colors dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800"
@@ -336,7 +339,7 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl px-4 md:px-6 py-5">
+      <main className="mx-auto w-full max-w-[480px] px-4 py-5">
         <form onSubmit={handlePlaceOrder} className="space-y-4">
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-base text-red-600 font-medium dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 flex items-start gap-2">
@@ -346,7 +349,7 @@ export default function CheckoutPage() {
           )}
 
           {/* 1. Order Items Breakdown */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:bg-neutral-900 dark:border-neutral-800 space-y-3.5 shadow-2xs">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:bg-neutral-900 dark:border-neutral-800 space-y-3.5 shadow-2xs">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 pb-3">
               <h2 className="text-base font-semibold uppercase tracking-wider text-black dark:text-gray-100">
                 Your Items ({items.reduce((s, i) => s + i.quantity, 0)})
@@ -369,7 +372,7 @@ export default function CheckoutPage() {
                         🍽️
                       </div>
                       <div className="min-w-0">
-                        <p className="text-base sm:text-lg font-semibold text-black dark:text-gray-100 truncate">{itemName}</p>
+                        <p className="text-base font-semibold text-black dark:text-gray-100 truncate">{itemName}</p>
                         <p className="text-sm font-normal text-black dark:text-gray-100">₹{itemPrice.toFixed(0)} each</p>
                       </div>
                     </div>
@@ -406,7 +409,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* 2. Order Mode — both Scan QR and Takeaway stay visible as tabs */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:bg-neutral-900 dark:border-neutral-800 space-y-3.5 shadow-2xs">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:bg-neutral-900 dark:border-neutral-800 space-y-3.5 shadow-2xs">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold uppercase tracking-wider text-black dark:text-gray-100">
                 Service Location
@@ -502,7 +505,7 @@ export default function CheckoutPage() {
 
           {/* 3. Customer Details — ONLY shown for Takeaway / Outside Order */}
           {outsideHotel ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:bg-neutral-900 dark:border-neutral-800 space-y-4 shadow-2xs">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:bg-neutral-900 dark:border-neutral-800 space-y-4 shadow-2xs">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold uppercase tracking-wider text-black dark:text-gray-100">
                   Contact Details
@@ -640,7 +643,7 @@ export default function CheckoutPage() {
             </div>
           ) : (
             /* Optional Cooking Instructions card for Dine-In */
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:bg-neutral-900 dark:border-neutral-800 space-y-2.5 shadow-2xs">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:bg-neutral-900 dark:border-neutral-800 space-y-2.5 shadow-2xs">
               <label htmlFor="notes" className="block text-base font-semibold uppercase tracking-wider text-black dark:text-gray-100">
                 Cooking Instructions <span className="normal-case text-gray-500 font-normal dark:text-gray-400">(optional)</span>
               </label>
@@ -656,7 +659,7 @@ export default function CheckoutPage() {
           )}
 
           {/* 4. Bill Summary */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:bg-neutral-900 dark:border-neutral-800 space-y-3 shadow-2xs">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:bg-neutral-900 dark:border-neutral-800 space-y-3 shadow-2xs">
             <h2 className="text-base font-semibold uppercase tracking-wider text-black dark:text-gray-100">
               Bill Summary
             </h2>

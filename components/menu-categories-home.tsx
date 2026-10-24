@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import BottomNav from '@/components/bottom-nav';
 import ThemeToggle from '@/components/theme-toggle';
@@ -56,7 +56,7 @@ const FALLBACK_GRADIENTS: Array<[string, string]> = [
   ['#9fd4ff', '#7fb8ff'],
 ];
 
-const CARD_HEIGHT = 150;
+const MENU_CACHE_KEY = 'ka_menu_cache_v1';
 
 function hexToRgba(hex: string, alpha: number) {
   const value = hex.replace('#', '');
@@ -80,120 +80,68 @@ export default function MenuCategoriesHome({ fontClassName = '' }: { fontClassNa
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const headerRef = useRef<HTMLElement | null>(null);
-  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const metaRef = useRef<Array<{ y: number; h: number }>>([]);
-  const tickRef = useRef(false);
-
   useEffect(() => {
     let cancelled = false;
+    let hasCached = false;
+
+    // Instant paint from the last successful menu payload.
+    try {
+      const cached = localStorage.getItem(MENU_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed?.categories) && parsed.categories.length > 0) {
+          setCategories(parsed.categories);
+          setLoading(false);
+          hasCached = true;
+        }
+      }
+    } catch {
+      // Ignore malformed cache
+    }
+
+    const controller = new AbortController();
 
     async function load() {
       try {
-        const res = await fetch('/api/menu?refresh=true', { cache: 'no-store' });
+        const res = await fetch('/api/menu', { signal: controller.signal });
         const data = await res.json();
         if (!cancelled && res.ok && Array.isArray(data.categories)) {
           setCategories(data.categories);
+          try {
+            localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(data));
+          } catch {
+            // Ignore quota errors
+          }
         }
       } catch {
-        // Leave the empty state visible if the menu cannot be loaded
+        // Keep cached/empty state if the network is unavailable
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !hasCached) setLoading(false);
       }
     }
 
     load();
+
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, []);
 
-  const update = useCallback(() => {
-    tickRef.current = false;
-    const stickyBottom = (headerRef.current?.getBoundingClientRect().bottom ?? 0) + 8;
-    const viewportHeight = window.innerHeight;
-    const scrollY = window.scrollY;
-
-    itemRefs.current.forEach((el, index) => {
-      if (!el) return;
-      const meta = metaRef.current[index] ?? { y: 0, h: CARD_HEIGHT };
-      const h = meta.h || CARD_HEIGHT;
-      const top = meta.y - scrollY;
-
-      const leaving = Math.min(Math.max((stickyBottom - top) / h, 0), 1.4);
-      const entering = Math.min(
-        Math.max((top - (viewportHeight - h * 1.2)) / (h * 1.2), 0),
-        1
-      );
-      const dd = Math.min(leaving, 1);
-
-      const scale = 1 - 0.09 * dd - 0.05 * entering;
-      const translateY = leaving * h * 0.55 + entering * 44;
-      const rotateX = dd * 24;
-      const opacity = Math.min(Math.max(1 - 0.9 * dd - 0.55 * entering, 0), 1);
-
-      el.style.transform = `translate3d(0,${translateY.toFixed(1)}px,0) rotateX(${rotateX.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
-      el.style.opacity = opacity.toFixed(2);
-      el.style.pointerEvents = opacity < 0.3 ? 'none' : '';
-
-      const emoji = el.querySelector<HTMLElement>('[data-emoji]');
-      if (emoji) {
-        emoji.style.transform = `rotate(${(-12 + dd * 10 - entering * 14).toFixed(1)}deg) translateY(${(-dd * 14 + entering * 22).toFixed(1)}px)`;
-      }
-    });
-  }, []);
-
-  const measure = useCallback(() => {
-    itemRefs.current.forEach((el) => {
-      if (el) el.style.transform = 'none';
-    });
-
-    metaRef.current = itemRefs.current.map((el) => {
-      if (!el) return { y: 0, h: CARD_HEIGHT };
-      const rect = el.getBoundingClientRect();
-      return { y: rect.top + window.scrollY, h: el.offsetHeight };
-    });
-
-    update();
-  }, [update]);
-
-  useEffect(() => {
-    const raf = requestAnimationFrame(measure);
-    const timeout = setTimeout(measure, 150);
-    const fonts = document.fonts?.ready;
-    if (fonts) fonts.then(measure).catch(() => undefined);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(timeout);
-    };
-  }, [measure, categories]);
-
-  useEffect(() => {
-    const onScroll = () => {
-      if (!tickRef.current) {
-        tickRef.current = true;
-        requestAnimationFrame(update);
-      }
-    };
-    const onResize = () => measure();
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize);
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onResize);
-    };
-  }, [measure, update]);
+  const totalDishes = useMemo(
+    () => categories.reduce((sum, category) => sum + (category.items?.length || 0), 0),
+    [categories]
+  );
 
   return (
     <div className={`${styles.page} ${fontClassName}`}>
-      <header ref={headerRef} className={styles.header}>
+      <header className={styles.header}>
         <div className={styles.headerRow}>
           <div>
             <h1 className={styles.title}>Our Menu</h1>
-            <p className={styles.sub}>{categories.length} categories</p>
+            <p className={styles.sub}>
+              {categories.length} categories · {totalDishes} dishes
+            </p>
           </div>
           <ThemeToggle className="bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-gray-300" />
         </div>
@@ -201,11 +149,9 @@ export default function MenuCategoriesHome({ fontClassName = '' }: { fontClassNa
 
       <main className={styles.main}>
         {loading && categories.length === 0 && (
-          <div aria-hidden="true">
-            {[0, 1, 2, 3].map((index) => (
-              <div key={index} className={styles.wrap} style={{ zIndex: index + 1 }}>
-                <div className={styles.skeleton} />
-              </div>
+          <div className={styles.grid} aria-hidden="true">
+            {[0, 1, 2, 3, 4, 5].map((index) => (
+              <div key={index} className={styles.skeleton} />
             ))}
           </div>
         )}
@@ -214,40 +160,35 @@ export default function MenuCategoriesHome({ fontClassName = '' }: { fontClassNa
           <div className={styles.empty}>No categories available.</div>
         )}
 
-        <div>
+        <div className={styles.grid}>
           {categories.map((category, index) => {
             const curated = getCurated(category.name, index);
-            const description = curated.description || category.description || category.name;
+            const description = curated.description || category.description || 'Pure veg delicacies';
             const itemCount = category.items?.length || 0;
 
             return (
-              <div
+              <Link
                 key={category.id}
-                ref={(el) => {
-                  itemRefs.current[index] = el;
+                href={`/menu?cat=${encodeURIComponent(category.id)}`}
+                prefetch={false}
+                className={styles.card}
+                aria-label={`${category.name}, ${itemCount} dishes`}
+                style={{
+                  backgroundImage: `linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35)), linear-gradient(135deg,${hexToRgba(curated.gradient[0], 0.5)},${hexToRgba(curated.gradient[1], 0.5)})`,
                 }}
-                className={styles.wrap}
-                style={{ zIndex: index + 1 }}
               >
-                <Link
-                  href={`/menu?cat=${encodeURIComponent(category.id)}`}
-                  className={styles.card}
-                  aria-label={`${category.name}, ${itemCount} dishes`}
-                  style={{
-                    backgroundImage: `linear-gradient(rgba(255,255,255,.3),rgba(255,255,255,.3)), linear-gradient(135deg,${hexToRgba(curated.gradient[0], 0.45)},${hexToRgba(curated.gradient[1], 0.45)})`,
-                  }}
-                >
-                  <span className={styles.blob} />
-                  <div className={styles.txt}>
-                    <h2>{category.name.toUpperCase()}</h2>
-                    <span className={styles.pill}>{itemCount} Dishes</span>
-                    <p>{description}</p>
-                  </div>
-                  <span className={styles.emo} data-emoji>
+                <span className={styles.blob} aria-hidden="true" />
+                <div className={styles.cardTop}>
+                  <span className={styles.emo} aria-hidden="true">
                     {curated.emoji}
                   </span>
-                </Link>
-              </div>
+                  <span className={styles.pill}>{itemCount} Dishes</span>
+                </div>
+                <div className={styles.cardBody}>
+                  <h2>{category.name}</h2>
+                  <p>{description}</p>
+                </div>
+              </Link>
             );
           })}
         </div>

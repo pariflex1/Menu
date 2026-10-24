@@ -669,7 +669,10 @@ export default function DashboardClient({ session }: Props) {
     return (
       <div className="min-h-dvh bg-gray-50/50 pb-20 font-sans">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-200/80 px-4 py-3.5 shadow-2xs">
+        <header
+          style={{ top: 'var(--pwa-banner-offset, 0px)' }}
+          className="sticky z-30 bg-white border-b border-gray-200/80 px-4 py-3.5 shadow-2xs"
+        >
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs">
@@ -829,7 +832,10 @@ export default function DashboardClient({ session }: Props) {
   return (
     <div className="min-h-dvh bg-gray-50/40 pb-16 font-sans">
       {/* ─── Top Navbar ─── */}
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-2xs">
+      <header
+        style={{ top: 'var(--pwa-banner-offset, 0px)' }}
+        className="sticky z-30 bg-white border-b border-gray-200 shadow-2xs"
+      >
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs">
