@@ -28,6 +28,33 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ orders });
+  const addressIds = Array.from(
+    new Set(
+      (orders || [])
+        .map((o) => o.delivery_address_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+
+  const addressesById: Record<string, any> = {};
+  if (addressIds.length > 0) {
+    const { data: addresses } = await supabase
+      .from('customer_addresses')
+      .select('id, address_line1, address_line2, city, state, pincode')
+      .in('id', addressIds);
+
+    for (const address of addresses || []) {
+      addressesById[address.id] = address;
+    }
+  }
+
+  const enrichedOrders = (orders || []).map((order) => ({
+    ...order,
+    customer_addresses: order.delivery_address_id
+      ? addressesById[order.delivery_address_id] || null
+      : null,
+  }));
+
+  return NextResponse.json({ orders: enrichedOrders });
 }
 

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 function QRResolver() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const qrToken = searchParams.get('t');
+  const qrToken = searchParams.get('t') || searchParams.get('token');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

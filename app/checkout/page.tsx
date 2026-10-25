@@ -486,21 +486,7 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               )
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3.5 dark:bg-neutral-800 dark:border-neutral-700">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-lg border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700">
-                    🛍️
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-base font-semibold text-black dark:text-gray-100">Takeaway / Pickup Order</p>
-                    <p className="text-sm text-black dark:text-gray-100 font-normal mt-0.5 leading-relaxed">
-                      Enter your name, mobile number and location below. Your order will be prepared for pickup.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* 3. Customer Details — ONLY shown for Takeaway / Outside Order */}
@@ -525,8 +511,7 @@ export default function CheckoutPage() {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   required
-                  placeholder="Enter your full name"
-                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-base text-black dark:text-gray-100 dark:bg-neutral-800 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 focus:border-emerald-400 transition-all font-normal placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-base text-black dark:text-gray-100 dark:bg-neutral-800 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 focus:border-emerald-400 transition-all font-normal"
                 />
               </div>
 
@@ -555,8 +540,7 @@ export default function CheckoutPage() {
                       }
                     }}
                     required
-                    placeholder="10-digit mobile number"
-                    className={`w-full pl-16 pr-14 py-3 border rounded-xl text-base text-black dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 transition-all font-normal placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                    className={`w-full pl-16 pr-14 py-3 border rounded-xl text-base text-black dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 transition-all font-normal ${
                       phoneError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40' : 'border-gray-300 bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800'
                     }`}
                   />
@@ -589,8 +573,7 @@ export default function CheckoutPage() {
                       if (locationError && e.target.value.trim()) setLocationError(null);
                     }}
                     required
-                    placeholder="House / street / landmark / area"
-                    className={`w-full pl-12 pr-4 py-3 border rounded-xl text-base text-black dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 transition-all font-normal placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                    className={`w-full pl-12 pr-4 py-3 border rounded-xl text-base text-black dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 transition-all font-normal ${
                       locationError ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/40' : 'border-gray-300 bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800'
                     }`}
                   />
@@ -636,8 +619,7 @@ export default function CheckoutPage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  placeholder="e.g. Less spicy, Jain preparation, extra chutney..."
-                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-base text-black dark:text-gray-100 dark:bg-neutral-800 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 focus:border-emerald-400 transition-all font-normal placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-base text-black dark:text-gray-100 dark:bg-neutral-800 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 focus:border-emerald-400 transition-all font-normal"
                 />
               </div>
             </div>
@@ -652,8 +634,7 @@ export default function CheckoutPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                placeholder="e.g. Less spicy, Jain preparation, extra chutney, no onions..."
-                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-base text-black dark:text-gray-100 dark:bg-neutral-800 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 focus:border-emerald-400 transition-all font-normal placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-base text-black dark:text-gray-100 dark:bg-neutral-800 dark:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-neutral-900 focus:border-emerald-400 transition-all font-normal"
               />
             </div>
           )}

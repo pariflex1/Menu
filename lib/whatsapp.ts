@@ -11,6 +11,7 @@ export interface WhatsAppOrderDetails {
   orderType: string;
   tableName?: string | null;
   roomNumber?: string | null;
+  locationLink?: string | null;
   items: Array<{
     name: string;
     quantity: number;
@@ -147,6 +148,10 @@ export async function sendNewOrderAlertToManagement(order: WhatsAppOrderDetails)
     tableRoom = order.customerName;
   } else if (order.orderType === 'home') {
     tableRoom = 'Home Delivery';
+  }
+
+  if (order.orderType === 'home' && order.locationLink) {
+    tableRoom = `${tableRoom} - Location: ${order.locationLink}`;
   }
 
   const formattedTotal = `₹${order.total.toFixed(2)}`;

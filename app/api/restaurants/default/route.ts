@@ -6,7 +6,7 @@ export async function GET() {
 
   const { data: restaurant, error } = await supabase
     .from('restaurants')
-    .select('id, name, slug, logo_url, phone, email, address')
+    .select('id, name, slug, phone, email, address')
     .limit(1)
     .maybeSingle();
 

@@ -12,9 +12,10 @@ interface BottomNavProps {
   activeTab?: NavTab;
   onSelectTab?: (tab: NavTab) => void;
   className?: string;
+  isVisible?: boolean;
 }
 
-export default function BottomNav({ activeTab, onSelectTab, className = '' }: BottomNavProps) {
+export default function BottomNav({ activeTab, onSelectTab, className = '', isVisible = true }: BottomNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { total, totalItemCount } = useBucket();
@@ -52,7 +53,11 @@ export default function BottomNav({ activeTab, onSelectTab, className = '' }: Bo
   };
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-none ${className}`}>
+    <div
+      className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-none transition-transform duration-300 ease-in-out ${
+        isVisible ? 'translate-y-0' : 'translate-y-full'
+      } ${className}`}
+    >
       <div className="max-w-[480px] mx-auto pointer-events-auto space-y-0">
         {/* Floating Quick Basket Bar */}
         {totalItemCount > 0 && currentTab !== 'basket' && (

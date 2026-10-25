@@ -273,10 +273,49 @@ function MenuInner() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [activeCategoryTab, setActiveCategoryTab] = useState<string>(catQueryParam || 'all');
   const [selectedDishDetail, setSelectedDishDetail] = useState<MenuItem | null>(null);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
   const categoryNavRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const scrollTickRef = useRef(false);
   const { items: bucketItems, addItem, updateQuantity } = useBucket();
+
+  // Hide / show top header and bottom menu on scroll
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScrollVisibility = () => {
+      const currentScrollY = window.scrollY;
+      const prevScrollY = lastScrollYRef.current;
+      const delta = currentScrollY - prevScrollY;
+
+      // Always keep visible when near the top or when user is actively searching
+      if (currentScrollY <= 25 || searchFocused || !!searchQuery) {
+        setIsNavVisible(true);
+      } else if (Math.abs(delta) > 6) {
+        if (delta > 0 && currentScrollY > 70) {
+          // Scrolling down -> hide top search bar, category tabs, and bottom menu
+          setIsNavVisible(false);
+        } else if (delta < 0) {
+          // Scrolling up -> show top search bar, category tabs, and bottom menu
+          setIsNavVisible(true);
+        }
+      }
+
+      lastScrollYRef.current = currentScrollY;
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(handleScrollVisibility);
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [searchFocused, searchQuery]);
 
   useEffect(() => {
     let hasCached = false;
@@ -369,6 +408,7 @@ function MenuInner() {
 
   const handleJumpToCategory = useCallback((catId: string) => {
     setActiveCategoryTab(catId);
+    setIsNavVisible(true);
     if (catId === 'all') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     document.getElementById(`cat-section-${catId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
@@ -434,103 +474,108 @@ function MenuInner() {
 
   return (
     <div className="customer-page min-h-dvh bg-[#FAFAFA] pb-24 font-sans dark:bg-neutral-950">
-      <header
+      {/* Top Search Bar & Category Tabs: sticky container that slides up/down on scroll */}
+      <div
         ref={headerRef}
         style={{ top: 'var(--pwa-banner-offset, 0px)' }}
-        className="sticky z-30 bg-white/95 backdrop-blur-md pt-3 pb-2.5 border-b border-gray-200/90 shadow-2xs dark:bg-neutral-950/95 dark:border-neutral-800"
+        className={`sticky z-30 bg-white/95 backdrop-blur-md border-b border-gray-200/90 shadow-2xs transition-transform duration-300 ease-in-out dark:bg-neutral-950/95 dark:border-neutral-800 ${
+          isNavVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
       >
-        <div className="mx-auto w-full max-w-[480px] px-4">
-          <div className="flex items-center gap-2.5">
-          {/* Brand Logo Avatar */}
-          <Link href="/" prefetch={false} aria-label="Krishna Anandam" className="w-9 h-9 rounded-full overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs dark:border-neutral-700">
-            <Image
-              src="/icons/logo.webp"
-              alt="Krishna Anandam"
-              width={36}
-              height={36}
-              className="w-full h-full object-cover"
-            />
-          </Link>
+        <header className="pt-3 pb-2">
+          <div className="mx-auto w-full max-w-[480px] px-4">
+            <div className="flex items-center gap-2.5">
+              {/* Brand Logo Avatar */}
+              <Link href="/" prefetch={false} aria-label="Krishna Anandam" className="w-9 h-9 rounded-full overflow-hidden bg-white border border-gray-200 shrink-0 shadow-2xs dark:border-neutral-700">
+                <Image
+                  src="/icons/logo.webp"
+                  alt="Krishna Anandam"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-cover"
+                />
+              </Link>
 
-          <div className={`flex-1 flex items-center gap-2 rounded-full px-3.5 py-2 transition-all border bg-gray-100 dark:bg-neutral-800 ${searchFocused ? '!bg-white dark:!bg-neutral-900 ring-2 ring-[#05C12F]/20 dark:ring-emerald-500/30 !border-[#05C12F] dark:!border-emerald-500' : 'border-transparent'}`}>
-            <svg className="w-4 h-4 text-gray-400 shrink-0 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="search"
-              placeholder="Search dishes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none font-normal dark:text-gray-100 dark:placeholder-gray-500"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 text-xs cursor-pointer dark:bg-neutral-700 dark:text-gray-300 dark:hover:text-gray-100">
-                ✕
+              <div className={`flex-1 flex items-center gap-2 rounded-full px-3.5 py-2 transition-all border bg-gray-100 dark:bg-neutral-800 ${searchFocused ? '!bg-white dark:!bg-neutral-900 ring-2 ring-[#05C12F]/20 dark:ring-emerald-500/30 !border-[#05C12F] dark:!border-emerald-500' : 'border-transparent'}`}>
+                <svg className="w-4 h-4 text-gray-400 shrink-0 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="search"
+                  placeholder="Search dishes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none font-normal dark:text-gray-100 dark:placeholder-gray-500"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 text-xs cursor-pointer dark:bg-neutral-700 dark:text-gray-300 dark:hover:text-gray-100">
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <ThemeToggle className="bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-gray-300" />
+
+              <Link href="/checkout" prefetch={false} aria-label="Cart" className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center shrink-0 transition-colors dark:bg-neutral-800 dark:hover:bg-neutral-700">
+                <ShoppingCart className="w-4 h-4 text-gray-600 dark:text-gray-300" strokeWidth={2} />
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Category Tabs: horizontally scrollable strip */}
+        {!searchQuery && categories.length > 0 && (
+          <div className="mx-auto w-full max-w-[480px] px-4 pb-2.5 pt-0.5">
+            <div
+              ref={categoryNavRef}
+              className="no-scrollbar -mx-1 flex items-center gap-2 overflow-x-auto overscroll-x-contain scroll-smooth px-1 py-0.5"
+            >
+              <button
+                data-cat="all"
+                onClick={() => handleJumpToCategory('all')}
+                className={`flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all press-scale cursor-pointer ${
+                  activeCategoryTab === 'all'
+                    ? 'bg-[#05C12F] text-white shadow-xs dark:bg-emerald-700'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700'
+                }`}
+              >
+                <LayoutGrid className="w-3 h-3 shrink-0" strokeWidth={2.5} />
+                <span>All ({totalDishesCount})</span>
               </button>
-            )}
+              {categories.map((cat) => {
+                const isSel = activeCategoryTab === cat.id;
+                const CategoryIcon = getCategoryIcon(cat.name);
+                return (
+                  <button
+                    key={cat.id}
+                    data-cat={cat.id}
+                    onClick={() => handleJumpToCategory(cat.id)}
+                    className={`flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all press-scale cursor-pointer ${
+                      isSel
+                        ? 'bg-[#05C12F] text-white shadow-xs dark:bg-emerald-700'
+                        : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-800'
+                    }`}
+                  >
+                    <CategoryIcon className="w-3 h-3 shrink-0" strokeWidth={2.5} />
+                    <span className="whitespace-nowrap">{cat.name}</span>
+                  </button>
+                );
+              })}
+
+              <Link
+                href="/offer"
+                prefetch={false}
+                className="flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap text-gray-700 border border-gray-200 bg-[#FCFCFC] hover:bg-gray-50 press-scale cursor-pointer dark:bg-neutral-900 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-800"
+              >
+                <Gift className="w-3 h-3 shrink-0" strokeWidth={2.5} />
+                <span>Offers</span>
+              </Link>
+            </div>
           </div>
-
-          <ThemeToggle className="bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-gray-300" />
-
-          <Link href="/checkout" prefetch={false} aria-label="Cart" className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center shrink-0 transition-colors dark:bg-neutral-800 dark:hover:bg-neutral-700">
-            <ShoppingCart className="w-4 h-4 text-gray-600 dark:text-gray-300" strokeWidth={2} />
-          </Link>
-        </div>
-        </div>
-      </header>
-
-      {/* Category Tabs: horizontally scrollable strip */}
-      {!searchQuery && categories.length > 0 && (
-        <div className="mx-auto w-full max-w-[480px] px-4 pt-3">
-          <div
-            ref={categoryNavRef}
-            className="no-scrollbar -mx-1 flex items-center gap-2 overflow-x-auto overscroll-x-contain scroll-smooth px-1 py-1"
-          >
-            <button
-              data-cat="all"
-              onClick={() => handleJumpToCategory('all')}
-              className={`flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all press-scale cursor-pointer ${
-                activeCategoryTab === 'all'
-                  ? 'bg-[#05C12F] text-white shadow-xs dark:bg-emerald-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700'
-              }`}
-            >
-              <LayoutGrid className="w-3 h-3 shrink-0" strokeWidth={2.5} />
-              <span>All ({totalDishesCount})</span>
-            </button>
-            {categories.map((cat) => {
-              const isSel = activeCategoryTab === cat.id;
-              const CategoryIcon = getCategoryIcon(cat.name);
-              return (
-                <button
-                  key={cat.id}
-                  data-cat={cat.id}
-                  onClick={() => handleJumpToCategory(cat.id)}
-                  className={`flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all press-scale cursor-pointer ${
-                    isSel
-                      ? 'bg-[#05C12F] text-white shadow-xs dark:bg-emerald-700'
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-800'
-                  }`}
-                >
-                  <CategoryIcon className="w-3 h-3 shrink-0" strokeWidth={2.5} />
-                  <span className="whitespace-nowrap">{cat.name}</span>
-                </button>
-              );
-            })}
-
-            <Link
-              href="/offer"
-              prefetch={false}
-              className="flex min-h-[34px] shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap text-gray-700 border border-gray-200 bg-[#FCFCFC] hover:bg-gray-50 press-scale cursor-pointer dark:bg-neutral-900 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-800"
-            >
-              <Gift className="w-3 h-3 shrink-0" strokeWidth={2.5} />
-              <span>Offers</span>
-            </Link>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <main className="mx-auto w-full max-w-[480px] px-4 pt-4 space-y-7">
         {loading && !categories.length && (
@@ -563,7 +608,7 @@ function MenuInner() {
         )}
 
         {filteredCategories.map((category) => (
-          <section key={category.id} id={`cat-section-${category.id}`} className="space-y-3 scroll-mt-[4.75rem]">
+          <section key={category.id} id={`cat-section-${category.id}`} className="space-y-3 scroll-mt-[6.5rem]">
             <CategoryBanner category={category} />
             <div className="grid grid-cols-1 gap-2.5">
               {category.items.map((item) => (
@@ -605,7 +650,7 @@ function MenuInner() {
         <DishDetailModal item={selectedDishDetail} onClose={() => setSelectedDishDetail(null)} />
       )}
 
-      <BottomNav activeTab="menu" />
+      <BottomNav activeTab="menu" isVisible={isNavVisible} />
     </div>
   );
 }

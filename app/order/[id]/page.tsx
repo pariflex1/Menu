@@ -277,12 +277,12 @@ export default function OrderTrackingPage() {
 
   const locationLabel =
     order.tables?.table_number
-      ? `Table ${order.tables.table_number}`
+      ? `🍽️ Table ${order.tables.table_number}`
       : order.rooms?.room_number
-      ? `Room ${order.rooms.room_number}`
-      : order.order_type === 'home'
-      ? '🚗 Takeaway Order'
-      : 'Dine-In';
+      ? `🏨 Room ${order.rooms.room_number}`
+      : order.order_type === 'home' || (!order.table_id && !order.room_id)
+      ? '🛍️ Takeaway Order'
+      : '🍽️ Dine-In';
 
   return (
     <div className="customer-page min-h-dvh bg-[#F4F9F4] pb-24 font-sans dark:bg-neutral-950">

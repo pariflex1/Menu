@@ -36,8 +36,16 @@ interface Order {
   created_at: string;
   table_id?: string;
   room_id?: string;
+  delivery_address_id?: string | null;
   tables?: { table_number: string } | null;
   rooms?: { room_number: string } | null;
+  customer_addresses?: {
+    address_line1: string;
+    address_line2: string | null;
+    city: string;
+    state: string;
+    pincode: string;
+  } | null;
   order_items?: OrderItem[];
 }
 
@@ -91,7 +99,162 @@ interface Props {
   session: StaffSession;
 }
 
-type SuperAdminTab = 'orders' | 'menu' | 'categories' | 'banners' | 'staff' | 'tables' | 'logs';
+type SuperAdminTab = 'orders' | 'menu' | 'categories' | 'banners' | 'staff' | 'tables' | 'logs' | 'report';
+
+type ReportType = 'orders' | 'sales' | 'menu' | 'staff' | 'tables' | 'logs';
+
+interface ReportColumn {
+  label: string;
+}
+
+interface ReportTable {
+  title: string;
+  filename: string;
+  columns: ReportColumn[];
+  rows: Array<Array<string | number>>;
+  summary: Array<{ label: string; value: string }>;
+}
+
+const REPORT_TYPES: Array<{ value: ReportType; label: string }> = [
+  { value: 'orders', label: 'Orders Report' },
+  { value: 'sales', label: 'Sales by Item' },
+  { value: 'menu', label: 'Menu Items' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'tables', label: 'Tables & Rooms' },
+  { value: 'logs', label: 'Activity Logs' },
+];
+
+const REPORT_ORDER_STATUSES = [
+  'new',
+  'accepted',
+  'preparing',
+  'ready',
+  'served',
+  'completed',
+  'cancelled',
+];
+
+const REPORT_PAYMENT_OPTIONS = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'upi_manual', label: 'UPI (manual)' },
+  { value: 'room_bill', label: 'Room bill' },
+  { value: 'gateway', label: 'Gateway' },
+  { value: 'pending', label: 'Payment pending' },
+  { value: 'paid', label: 'Payment paid' },
+];
+
+function reportMoney(value: number | string | null | undefined): string {
+  return `₹${Number(value || 0).toFixed(2)}`;
+}
+
+function reportInRange(value: string, from: string, to: string): boolean {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  if (from) {
+    const start = new Date(`${from}T00:00:00`);
+    if (date < start) return false;
+  }
+  if (to) {
+    const end = new Date(`${to}T23:59:59.999`);
+    if (date > end) return false;
+  }
+  return true;
+}
+
+function reportEscapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function reportCsvCell(value: unknown): string {
+  const text = String(value ?? '');
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function downloadReportCsv(report: ReportTable): void {
+  const csv = [
+    report.columns.map((column) => reportCsvCell(column.label)).join(','),
+    ...report.rows.map((row) => row.map(reportCsvCell).join(',')),
+  ].join('\r\n');
+
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${report.filename}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function openReportPdf(report: ReportTable, filterSummary: string): void {
+  const popup = window.open('', '_blank');
+  if (!popup) {
+    alert('Please allow pop-ups to download the PDF report.');
+    return;
+  }
+
+  const summaryHtml = report.summary
+    .map(
+      (item) =>
+        `<div class="summary-card"><span>${reportEscapeHtml(item.label)}</span><strong>${reportEscapeHtml(item.value)}</strong></div>`,
+    )
+    .join('');
+
+  const headHtml = report.columns
+    .map((column) => `<th>${reportEscapeHtml(column.label)}</th>`)
+    .join('');
+
+  const bodyHtml = report.rows
+    .map(
+      (row) =>
+        `<tr>${row
+          .map((cell) => `<td>${reportEscapeHtml(cell)}</td>`)
+          .join('')}</tr>`,
+    )
+    .join('');
+
+  popup.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>${reportEscapeHtml(report.title)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 24px; }
+  .toolbar { margin-bottom: 16px; }
+  .toolbar button { background: #05c12f; color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .subtitle { color: #444; font-size: 12px; margin-bottom: 16px; }
+  .summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .summary-card { border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; min-width: 120px; background: #fafafa; }
+  .summary-card span { display: block; font-size: 10px; text-transform: uppercase; color: #666; letter-spacing: 0.04em; }
+  .summary-card strong { font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  th { background: #f1f5f1; border: 1px solid #ccc; padding: 6px; text-align: left; }
+  td { border: 1px solid #ddd; padding: 5px 6px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .footer { margin-top: 14px; font-size: 10px; color: #666; }
+  @media print { .toolbar { display: none; } body { margin: 0; } }
+</style>
+</head>
+<body>
+  <div class="toolbar"><button onclick="window.print()">Print / Save as PDF</button></div>
+  <h1>KRISHNA ANANDAM — ${reportEscapeHtml(report.title)}</h1>
+  <div class="subtitle">${reportEscapeHtml(filterSummary)}</div>
+  <div class="summary">${summaryHtml}</div>
+  <table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml || '<tr><td>No records found</td></tr>'}</tbody></table>
+  <div class="footer">Generated ${reportEscapeHtml(new Date().toLocaleString('en-IN'))} • ${report.rows.length} records</div>
+  <script>window.onload = function () { setTimeout(function () { window.print(); }, 350); };</script>
+</body>
+</html>`);
+  popup.document.close();
+}
 
 interface ActivityLog {
   id: string;
@@ -144,6 +307,70 @@ const STATUS_BADGES: Record<string, { label: string; bg: string; text: string; d
   completed: { label: 'Completed', bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600', dot: 'bg-gray-400' },
   cancelled: { label: 'Cancelled', bg: 'bg-red-50 border-red-200', text: 'text-red-700', dot: 'bg-red-500' },
 };
+
+export function getOrderChannelInfo(order: Order) {
+  // 1. Hotel Room Service order
+  if (order.rooms?.room_number || order.room_id || order.order_type === 'room') {
+    const roomNum = order.rooms?.room_number;
+    return {
+      channel: 'room' as const,
+      categoryLabel: 'Rooms',
+      badgeLabel: roomNum ? `Room ${roomNum}` : 'Room Service',
+      icon: '🏨',
+      badgeClass: 'bg-blue-50 text-blue-900 border-blue-300',
+    };
+  }
+
+  // 2. Restaurant Dine-in Table order
+  if (order.tables?.table_number || order.table_id || (order.order_type === 'table' && (order.table_id || order.tables?.table_number))) {
+    const tableNum = order.tables?.table_number;
+    return {
+      channel: 'table' as const,
+      categoryLabel: 'Tables',
+      badgeLabel: tableNum ? `Table ${tableNum}` : 'Table Service',
+      icon: '🍽️',
+      badgeClass: 'bg-emerald-50 text-emerald-900 border-emerald-300',
+    };
+  }
+
+  // 3. Takeaway / Pickup order (order_type === 'home' or orders without table/room)
+  const custName =
+    order.customer_name &&
+    order.customer_name !== 'Dine-in Guest' &&
+    order.customer_name !== 'Table Customer'
+      ? order.customer_name
+      : null;
+
+  return {
+    channel: 'home' as const,
+    categoryLabel: 'Takeaway',
+    badgeLabel: custName ? `Takeaway • ${custName}` : 'Takeaway',
+    icon: '🛍️',
+    badgeClass: 'bg-amber-50 text-amber-900 border-amber-300',
+  };
+}
+
+export function getOrderLocationLink(order: Order): string | null {
+  if (getOrderChannelInfo(order).channel !== 'home') return null;
+
+  const address = order.customer_addresses;
+  const addressQuery = [
+    address?.address_line1,
+    address?.address_line2,
+    address?.city,
+    address?.state,
+    address?.pincode,
+  ]
+    .filter(Boolean)
+    .join(', ')
+    .trim();
+
+  const notesLocation = order.notes?.match(/Location:\s*([^|]+)/i)?.[1]?.trim();
+  const query = addressQuery || notesLocation;
+
+  if (!query) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
 
 export default function DashboardClient({ session }: Props) {
   const isSuperAdmin = session.role === 'owner' || session.role === 'manager';
@@ -215,10 +442,7 @@ export default function DashboardClient({ session }: Props) {
     floor: '',
   });
 
-  // Logs state (Admin only)
-  const [logsList, setLogsList] = useState<ActivityLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(false);
-  const [logLevelFilter, setLogLevelFilter] = useState<string>('all');
+  // Log entry modal state (used from the Reports tab)
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
   const [newLogForm, setNewLogForm] = useState({
     action: 'SYSTEM_NOTE',
@@ -226,6 +450,28 @@ export default function DashboardClient({ session }: Props) {
     details: '',
   });
   const [isSubmittingLog, setIsSubmittingLog] = useState(false);
+
+  // Reports state
+  const [reportType, setReportType] = useState<ReportType>('orders');
+  const [reportData, setReportData] = useState<{ orders: Order[]; logs: ActivityLog[] }>({
+    orders: [],
+    logs: [],
+  });
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportFrom, setReportFrom] = useState('');
+  const [reportTo, setReportTo] = useState('');
+  const [reportSearch, setReportSearch] = useState('');
+  const [reportOrderType, setReportOrderType] = useState<'all' | 'table' | 'room' | 'home'>('all');
+  const [reportOrderStatus, setReportOrderStatus] = useState('all');
+  const [reportPayment, setReportPayment] = useState('all');
+  const [reportMenuCategory, setReportMenuCategory] = useState('all');
+  const [reportVegType, setReportVegType] = useState('all');
+  const [reportAvailability, setReportAvailability] = useState('all');
+  const [reportStaffRole, setReportStaffRole] = useState('all');
+  const [reportAssetType, setReportAssetType] = useState<'all' | 'table' | 'room'>('all');
+  const [reportAssetStatus, setReportAssetStatus] = useState('all');
+  const [reportLogLevel, setReportLogLevel] = useState('all');
+  const [activityLogLevel, setActivityLogLevel] = useState('all');
 
   // Initial fetch
   useEffect(() => {
@@ -238,7 +484,6 @@ export default function DashboardClient({ session }: Props) {
       fetchStaffList();
       fetchTablesAndRooms();
       fetchBanners();
-      fetchLogs();
     }
 
     return () => clearInterval(interval);
@@ -372,20 +617,19 @@ export default function DashboardClient({ session }: Props) {
     }
   }
 
-  async function fetchLogs() {
+  async function fetchReportData() {
     if (!isSuperAdmin) return;
-    setLogsLoading(true);
+    setReportLoading(true);
     try {
-      const url = logLevelFilter !== 'all' ? `/api/admin/logs?level=${logLevelFilter}` : '/api/admin/logs';
-      const res = await fetch(url);
+      const res = await fetch('/api/admin/reports');
       if (res.ok) {
         const data = await res.json();
-        setLogsList(data.logs || []);
+        setReportData({ orders: data.orders || [], logs: data.logs || [] });
       }
     } catch {
-      // Ignore
+      // Ignore report fetch errors
     } finally {
-      setLogsLoading(false);
+      setReportLoading(false);
     }
   }
 
@@ -402,7 +646,7 @@ export default function DashboardClient({ session }: Props) {
       if (res.ok) {
         setNewLogForm({ action: 'SYSTEM_NOTE', level: 'info', details: '' });
         setIsAddLogOpen(false);
-        fetchLogs();
+        fetchReportData();
       } else {
         const d = await res.json();
         alert(d.error || 'Failed to create log entry');
@@ -611,7 +855,7 @@ export default function DashboardClient({ session }: Props) {
 
   async function showQRModal(name: string, subtitle: string, type: 'table' | 'room', token: string) {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://krishnaanandam.in';
-    const targetUrl = `${origin}/q?token=${token}`;
+    const targetUrl = `${origin}/q?t=${token}`;
     try {
       const dataUrl = await QRCode.toDataURL(targetUrl, {
         width: 320,
@@ -624,13 +868,43 @@ export default function DashboardClient({ session }: Props) {
     }
   }
 
+  // Counts per channel respecting current status filter
+  const countsByType = useMemo(() => {
+    const counts = { all: 0, table: 0, room: 0, home: 0 };
+    orders.forEach((o) => {
+      const matchesStatus =
+        orderFilter === 'all'
+          ? true
+          : orderFilter === 'active'
+          ? ['new', 'accepted', 'preparing', 'ready', 'served', 'out_for_delivery'].includes(o.status)
+          : o.status === orderFilter;
+
+      if (matchesStatus) {
+        counts.all++;
+        const info = getOrderChannelInfo(o);
+        counts[info.channel]++;
+      }
+    });
+    return counts;
+  }, [orders, orderFilter]);
+
+  // Overall counts across all statuses for fallback guidance
+  const totalCountsByType = useMemo(() => {
+    const counts = { all: 0, table: 0, room: 0, home: 0 };
+    orders.forEach((o) => {
+      counts.all++;
+      const info = getOrderChannelInfo(o);
+      counts[info.channel]++;
+    });
+    return counts;
+  }, [orders]);
+
   // Filtered orders
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
       if (typeFilter !== 'all') {
-        if (typeFilter === 'table' && !o.table_id) return false;
-        if (typeFilter === 'room' && !o.room_id) return false;
-        if (typeFilter === 'home' && o.order_type !== 'home') return false;
+        const info = getOrderChannelInfo(o);
+        if (info.channel !== typeFilter) return false;
       }
       if (orderFilter === 'active') {
         return ['new', 'accepted', 'preparing', 'ready', 'served', 'out_for_delivery'].includes(o.status);
@@ -658,9 +932,435 @@ export default function DashboardClient({ session }: Props) {
 
   const newOrdersCount = orders.filter((o) => o.status === 'new').length;
 
-  const todayRevenue = orders
-    .filter((o) => o.status !== 'cancelled')
-    .reduce((sum, o) => sum + (o.total || 0), 0);
+  const reportTable = useMemo<ReportTable>(() => {
+    const query = reportSearch.trim().toLowerCase();
+    const matches = (values: Array<string | number | null | undefined>) =>
+      !query ||
+      values
+        .filter((value) => value !== null && value !== undefined && String(value).length > 0)
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+
+    const formattedDate = (value: string) =>
+      new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+    const filteredOrders = reportData.orders.filter((order) => {
+      if (!reportInRange(order.created_at, reportFrom, reportTo)) return false;
+      if (reportOrderType !== 'all' && getOrderChannelInfo(order).channel !== reportOrderType) return false;
+      if (reportOrderStatus !== 'all' && order.status !== reportOrderStatus) return false;
+      if (
+        reportPayment !== 'all' &&
+        order.payment_method !== reportPayment &&
+        order.payment_status !== reportPayment
+      ) {
+        return false;
+      }
+      return matches([
+        order.order_number,
+        order.customer_name,
+        order.customer_phone,
+        order.notes,
+        order.tables?.table_number,
+        order.rooms?.room_number,
+        order.customer_addresses?.address_line1,
+        ...(order.order_items || []).map((item) => item.item_name),
+      ]);
+    });
+
+    const orderAddress = (order: Order) => {
+      const address = order.customer_addresses;
+      if (address) {
+        return [
+          address.address_line1,
+          address.address_line2,
+          address.city,
+          address.state,
+          address.pincode,
+        ]
+          .filter(Boolean)
+          .join(', ');
+      }
+      return order.notes?.match(/Location:\s*([^|]+)/i)?.[1]?.trim() || '-';
+    };
+
+    switch (reportType) {
+      case 'orders': {
+        const rows = filteredOrders.map((order) => [
+          `#${order.order_number}`,
+          formattedDate(order.created_at),
+          getOrderChannelInfo(order).categoryLabel,
+          order.status,
+          order.customer_name || '-',
+          order.customer_phone && order.customer_phone !== '0000000000'
+            ? order.customer_phone
+            : '-',
+          orderAddress(order),
+          (order.order_items || []).reduce((sum, item) => sum + item.quantity, 0),
+          reportMoney(order.subtotal),
+          reportMoney(order.tax),
+          reportMoney(order.delivery_fee),
+          reportMoney(order.total),
+          `${order.payment_method} / ${order.payment_status}`,
+        ]);
+        const activeOrders = filteredOrders.filter((order) => order.status !== 'cancelled');
+        const revenue = activeOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+        const tax = activeOrders.reduce((sum, order) => sum + Number(order.tax || 0), 0);
+        const delivery = activeOrders.reduce(
+          (sum, order) => sum + Number(order.delivery_fee || 0),
+          0,
+        );
+        return {
+          title: 'Orders Report',
+          filename: 'orders-report',
+          columns: [
+            { label: 'Order #' },
+            { label: 'Date' },
+            { label: 'Type' },
+            { label: 'Status' },
+            { label: 'Customer' },
+            { label: 'Phone' },
+            { label: 'Address' },
+            { label: 'Items' },
+            { label: 'Subtotal' },
+            { label: 'Tax' },
+            { label: 'Delivery' },
+            { label: 'Total' },
+            { label: 'Payment' },
+          ],
+          rows,
+          summary: [
+            { label: 'Orders', value: String(filteredOrders.length) },
+            { label: 'Revenue', value: reportMoney(revenue) },
+            { label: 'Tax', value: reportMoney(tax) },
+            { label: 'Delivery fees', value: reportMoney(delivery) },
+            {
+              label: 'Avg. order',
+              value: reportMoney(activeOrders.length ? revenue / activeOrders.length : 0),
+            },
+          ],
+        };
+      }
+
+      case 'sales': {
+        const rows: Array<Array<string | number>> = [];
+        let quantity = 0;
+        let amount = 0;
+
+        for (const order of filteredOrders) {
+          for (const item of order.order_items || []) {
+            const lineTotal = Number(item.total_price || 0);
+            quantity += item.quantity;
+            amount += lineTotal;
+            rows.push([
+              `#${order.order_number}`,
+              formattedDate(order.created_at),
+              getOrderChannelInfo(order).categoryLabel,
+              item.item_name,
+              item.quantity,
+              reportMoney(item.unit_price),
+              reportMoney(lineTotal),
+              order.status,
+            ]);
+          }
+        }
+
+        return {
+          title: 'Sales by Item',
+          filename: 'sales-report',
+          columns: [
+            { label: 'Order #' },
+            { label: 'Date' },
+            { label: 'Type' },
+            { label: 'Item' },
+            { label: 'Qty' },
+            { label: 'Unit Price' },
+            { label: 'Total' },
+            { label: 'Status' },
+          ],
+          rows,
+          summary: [
+            { label: 'Line items', value: String(rows.length) },
+            { label: 'Items sold', value: String(quantity) },
+            { label: 'Sales', value: reportMoney(amount) },
+            { label: 'Orders', value: String(filteredOrders.length) },
+          ],
+        };
+      }
+
+      case 'menu': {
+        const filtered = menuItems.filter((item) => {
+          if (reportMenuCategory !== 'all' && item.category_id !== reportMenuCategory) return false;
+          if (reportVegType !== 'all' && item.veg_type !== reportVegType) return false;
+          if (reportAvailability === 'available' && !item.is_available) return false;
+          if (reportAvailability === 'unavailable' && item.is_available) return false;
+          return matches([
+            item.name,
+            item.description,
+            categories.find((category) => category.id === item.category_id)?.name,
+          ]);
+        });
+
+        const rows = filtered.map((item) => [
+          item.name,
+          categories.find((category) => category.id === item.category_id)?.name || '-',
+          reportMoney(item.price),
+          item.veg_type,
+          item.is_available ? 'Yes' : 'No',
+          item.is_featured ? 'Yes' : 'No',
+          item.sort_order,
+        ]);
+
+        const available = filtered.filter((item) => item.is_available).length;
+        const totalPrice = filtered.reduce((sum, item) => sum + Number(item.price || 0), 0);
+
+        return {
+          title: 'Menu Items Report',
+          filename: 'menu-report',
+          columns: [
+            { label: 'Item' },
+            { label: 'Category' },
+            { label: 'Price' },
+            { label: 'Veg Type' },
+            { label: 'Available' },
+            { label: 'Featured' },
+            { label: 'Sort Order' },
+          ],
+          rows,
+          summary: [
+            { label: 'Items', value: String(filtered.length) },
+            { label: 'Available', value: String(available) },
+            { label: 'Unavailable', value: String(filtered.length - available) },
+            {
+              label: 'Avg. price',
+              value: reportMoney(filtered.length ? totalPrice / filtered.length : 0),
+            },
+          ],
+        };
+      }
+
+      case 'staff': {
+        const filtered = staffList.filter((member) => {
+          if (reportStaffRole !== 'all' && member.role !== reportStaffRole) return false;
+          return matches([member.name, member.email, member.phone, member.role]);
+        });
+
+        const rows = filtered.map((member) => [
+          member.name,
+          member.role,
+          member.email || '-',
+          member.phone || '-',
+          member.created_at ? new Date(member.created_at).toLocaleDateString('en-IN') : '-',
+        ]);
+
+        return {
+          title: 'Staff Report',
+          filename: 'staff-report',
+          columns: [
+            { label: 'Name' },
+            { label: 'Role' },
+            { label: 'Email' },
+            { label: 'Phone' },
+            { label: 'Joined' },
+          ],
+          rows,
+          summary: [
+            { label: 'Staff', value: String(filtered.length) },
+            {
+              label: 'Owners / Managers',
+              value: String(filtered.filter((member) => ['owner', 'manager'].includes(member.role)).length),
+            },
+          ],
+        };
+      }
+
+      case 'tables': {
+        const rows: Array<Array<string | number>> = [];
+        let tableCount = 0;
+        let roomCount = 0;
+        let availableCount = 0;
+
+        if (reportAssetType !== 'room') {
+          const filteredTables = tables.filter((table) => {
+            if (reportAssetStatus !== 'all' && table.status !== reportAssetStatus) return false;
+            return matches([table.table_number, table.status, table.capacity]);
+          });
+          tableCount = filteredTables.length;
+          availableCount += filteredTables.filter((table) => table.status === 'available').length;
+          for (const table of filteredTables) {
+            rows.push(['Table', table.table_number, table.capacity, table.status]);
+          }
+        }
+
+        if (reportAssetType !== 'table') {
+          const filteredRooms = rooms.filter((room) => {
+            if (reportAssetStatus !== 'all' && room.status !== reportAssetStatus) return false;
+            return matches([room.room_number, room.floor, room.status]);
+          });
+          roomCount = filteredRooms.length;
+          availableCount += filteredRooms.filter((room) => room.status === 'available').length;
+          for (const room of filteredRooms) {
+            rows.push(['Room', room.room_number, room.floor || '-', room.status]);
+          }
+        }
+
+        return {
+          title: 'Tables & Rooms Report',
+          filename: 'tables-rooms-report',
+          columns: [
+            { label: 'Type' },
+            { label: 'Number' },
+            { label: 'Capacity / Floor' },
+            { label: 'Status' },
+          ],
+          rows,
+          summary: [
+            { label: 'Tables', value: String(tableCount) },
+            { label: 'Rooms', value: String(roomCount) },
+            { label: 'Available', value: String(availableCount) },
+            { label: 'Total', value: String(tableCount + roomCount) },
+          ],
+        };
+      }
+
+      case 'logs': {
+        const filtered = reportData.logs.filter((log) => {
+          if (!reportInRange(log.created_at, reportFrom, reportTo)) return false;
+          if (reportLogLevel !== 'all' && log.level !== reportLogLevel) return false;
+          return matches([log.action, log.actor_name, log.actor_role, log.details, log.level]);
+        });
+
+        const rows = filtered.map((log) => [
+          formattedDate(log.created_at),
+          log.level,
+          log.action,
+          log.actor_name || '-',
+          log.actor_role || '-',
+          log.details,
+        ]);
+
+        return {
+          title: 'Activity Logs Report',
+          filename: 'activity-logs-report',
+          columns: [
+            { label: 'Date' },
+            { label: 'Level' },
+            { label: 'Action' },
+            { label: 'Actor' },
+            { label: 'Role' },
+            { label: 'Details' },
+          ],
+          rows,
+          summary: [
+            { label: 'Log entries', value: String(filtered.length) },
+            { label: 'Warnings', value: String(filtered.filter((log) => log.level === 'warning').length) },
+            { label: 'Errors', value: String(filtered.filter((log) => log.level === 'error').length) },
+            { label: 'Success', value: String(filtered.filter((log) => log.level === 'success').length) },
+          ],
+        };
+      }
+    }
+  }, [
+    reportType,
+    reportData,
+    reportFrom,
+    reportTo,
+    reportSearch,
+    reportOrderType,
+    reportOrderStatus,
+    reportPayment,
+    reportMenuCategory,
+    reportVegType,
+    reportAvailability,
+    reportStaffRole,
+    reportAssetType,
+    reportAssetStatus,
+    reportLogLevel,
+    menuItems,
+    categories,
+    staffList,
+    tables,
+    rooms,
+  ]);
+
+  const reportAssetStatuses = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...tables.map((table) => table.status),
+          ...rooms.map((room) => room.status),
+        ]),
+      ).filter(Boolean),
+    [tables, rooms],
+  );
+
+  const reportFilterSummary = useMemo(() => {
+    const parts = [`Type: ${reportType}`];
+    if (reportFrom) parts.push(`From: ${reportFrom}`);
+    if (reportTo) parts.push(`To: ${reportTo}`);
+    if (reportSearch.trim()) parts.push(`Search: ${reportSearch.trim()}`);
+    if (reportOrderType !== 'all') parts.push(`Order type: ${reportOrderType}`);
+    if (reportOrderStatus !== 'all') parts.push(`Status: ${reportOrderStatus}`);
+    if (reportPayment !== 'all') parts.push(`Payment: ${reportPayment}`);
+    if (reportMenuCategory !== 'all') {
+      parts.push(
+        `Category: ${categories.find((category) => category.id === reportMenuCategory)?.name || reportMenuCategory}`,
+      );
+    }
+    if (reportVegType !== 'all') parts.push(`Veg type: ${reportVegType}`);
+    if (reportAvailability !== 'all') parts.push(`Availability: ${reportAvailability}`);
+    if (reportStaffRole !== 'all') parts.push(`Role: ${reportStaffRole}`);
+    if (reportAssetType !== 'all') parts.push(`Asset: ${reportAssetType}`);
+    if (reportAssetStatus !== 'all') parts.push(`Asset status: ${reportAssetStatus}`);
+    if (reportLogLevel !== 'all') parts.push(`Log level: ${reportLogLevel}`);
+    return parts.join(' • ');
+  }, [
+    reportType,
+    reportFrom,
+    reportTo,
+    reportSearch,
+    reportOrderType,
+    reportOrderStatus,
+    reportPayment,
+    reportMenuCategory,
+    reportVegType,
+    reportAvailability,
+    reportStaffRole,
+    reportAssetType,
+    reportAssetStatus,
+    reportLogLevel,
+    categories,
+  ]);
+
+  const filteredActivityLogs = useMemo(
+    () =>
+      activityLogLevel === 'all'
+        ? reportData.logs
+        : reportData.logs.filter((log) => log.level === activityLogLevel),
+    [reportData.logs, activityLogLevel],
+  );
+
+  function handleResetReportFilters() {
+    setReportFrom('');
+    setReportTo('');
+    setReportSearch('');
+    setReportOrderType('all');
+    setReportOrderStatus('all');
+    setReportPayment('all');
+    setReportMenuCategory('all');
+    setReportVegType('all');
+    setReportAvailability('all');
+    setReportStaffRole('all');
+    setReportAssetType('all');
+    setReportAssetStatus('all');
+    setReportLogLevel('all');
+  }
 
   // ══════════════════════════════════════════════════════════════
   // RENDER: STAFF VIEW (KITCHEN & STAFF ROLE)
@@ -700,21 +1400,45 @@ export default function DashboardClient({ session }: Props) {
             </div>
           </div>
 
-          {/* Status filter bar */}
-          <div className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-3 pb-1">
-            {(['active', 'new', 'preparing', 'ready', 'all'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setOrderFilter(st)}
-                className={`px-4 py-2 rounded-xl text-base font-medium capitalize transition-all shrink-0 cursor-pointer ${
-                  orderFilter === st
-                    ? 'bg-black text-white shadow-xs'
-                    : 'bg-white text-black hover:bg-gray-100 border border-gray-300'
-                }`}
-              >
-                {st === 'active' ? `Active (${activeOrdersCount})` : st === 'new' ? `New (${newOrdersCount})` : st}
-              </button>
-            ))}
+          {/* Status & Channel filter bars */}
+          <div className="max-w-4xl mx-auto space-y-2 pt-3 pb-1">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              {(['active', 'new', 'preparing', 'ready', 'all'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setOrderFilter(st)}
+                  className={`px-4 py-2 rounded-xl text-base font-medium capitalize transition-all shrink-0 cursor-pointer ${
+                    orderFilter === st
+                      ? 'bg-black text-white shadow-xs'
+                      : 'bg-white text-black hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  {st === 'active' ? `Active (${activeOrdersCount})` : st === 'new' ? `New (${newOrdersCount})` : st}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              {(['all', 'table', 'room', 'home'] as const).map((tp) => (
+                <button
+                  key={tp}
+                  onClick={() => setTypeFilter(tp)}
+                  className={`px-3.5 py-1.5 rounded-xl text-sm font-semibold capitalize transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                    typeFilter === tp
+                      ? 'bg-[#05C12F] text-white shadow-xs'
+                      : 'bg-white text-black hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  {tp === 'all'
+                    ? `All Types (${countsByType.all})`
+                    : tp === 'home'
+                    ? `🛍️ Takeaway (${countsByType.home})`
+                    : tp === 'room'
+                    ? `🏨 Rooms (${countsByType.room})`
+                    : `🍽️ Tables (${countsByType.table})`}
+                </button>
+              ))}
+            </div>
           </div>
         </header>
 
@@ -725,21 +1449,25 @@ export default function DashboardClient({ session }: Props) {
               <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
               </div>
-              <h3 className="text-xl font-semibold text-black">No Orders in this view</h3>
+              <h3 className="text-xl font-semibold text-black">
+                {typeFilter !== 'all'
+                  ? `No ${orderFilter === 'active' ? 'active' : orderFilter} orders for ${typeFilter === 'home' ? 'Takeaway' : typeFilter === 'room' ? 'Rooms' : 'Tables'}`
+                  : 'No Orders in this view'}
+              </h3>
+              {orderFilter !== 'all' && totalCountsByType[typeFilter] > 0 && (
+                <button
+                  onClick={() => setOrderFilter('all')}
+                  className="mt-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200 cursor-pointer"
+                >
+                  View past / completed {typeFilter === 'home' ? 'Takeaway' : typeFilter === 'room' ? 'Rooms' : 'Tables'} orders ({totalCountsByType[typeFilter]})
+                </button>
+              )}
             </div>
           ) : (
             filteredOrders.map((order) => {
               const badge = STATUS_BADGES[order.status] || STATUS_BADGES.new;
-              const locationName =
-                order.tables?.table_number
-                  ? `Table ${order.tables.table_number}`
-                  : order.rooms?.room_number
-                  ? `Room ${order.rooms.room_number}`
-                  : order.customer_name
-                  ? order.customer_name
-                  : order.order_type === 'home'
-                  ? 'Takeaway'
-                  : 'Direct Order';
+              const channelInfo = getOrderChannelInfo(order);
+              const locationLink = getOrderLocationLink(order);
 
               const bundleItems = order.order_items || [];
               const totalItemsCount = bundleItems.reduce((s, i) => s + i.quantity, 0);
@@ -756,13 +1484,16 @@ export default function DashboardClient({ session }: Props) {
                         <span className="text-2xl font-semibold text-black">
                           #{order.order_number}
                         </span>
-                        <span className="text-base font-semibold bg-emerald-50 text-black px-3 py-0.5 rounded-lg border border-emerald-300">
-                          {order.rooms?.room_number ? 'Room' : 'Table'} {locationName}
+                        <span className={`text-base font-semibold px-3 py-0.5 rounded-lg border flex items-center gap-1.5 ${channelInfo.badgeClass}`}>
+                          <span>{channelInfo.icon}</span>
+                          <span>{channelInfo.badgeLabel}</span>
                         </span>
                       </div>
                       <p className="text-base font-medium text-black mt-1">
-                        {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &bull;{' '}
-                        <span className="font-semibold">{order.customer_name}</span>
+                        {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {order.customer_name && order.customer_name !== 'Dine-in Guest' && order.customer_name !== 'Table Customer' && (
+                          <> &bull; <span className="font-semibold">{order.customer_name}</span></>
+                        )}
                       </p>
                     </div>
 
@@ -805,6 +1536,18 @@ export default function DashboardClient({ session }: Props) {
                     </div>
                   )}
 
+                  {locationLink && (
+                    <a
+                      href={locationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-xl px-4 py-2.5 text-base font-semibold transition-colors"
+                    >
+                      <span>📍</span>
+                      <span>Open Location in Google Maps</span>
+                    </a>
+                  )}
+
                   {/* Action buttons */}
                   <div className="flex gap-2 pt-2 border-t border-gray-100">
                     {(STATUS_ACTIONS[order.status] || []).map((action) => (
@@ -820,11 +1563,12 @@ export default function DashboardClient({ session }: Props) {
                 </div>
               );
             })
-          )}
-        </main>
-      </div>
-    );
-  }
+        )}
+
+      </main>
+    </div>
+  );
+}
 
   // ══════════════════════════════════════════════════════════════
   // RENDER: SUPER ADMIN DASHBOARD
@@ -881,8 +1625,32 @@ export default function DashboardClient({ session }: Props) {
           </div>
         </div>
 
-        {/* ─── Navigation Tabs ─── */}
-        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center gap-2 overflow-x-auto no-scrollbar pt-1.5 pb-3">
+        {/* ─── Navigation Tabs (mobile: select menu) ─── */}
+        <div className="md:hidden max-w-7xl mx-auto px-4 pb-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Dashboard Section</span>
+            <select
+              value={activeTab}
+              onChange={(event) => {
+                const tab = event.target.value as SuperAdminTab;
+                setActiveTab(tab);
+                if (tab === 'report' || tab === 'logs') fetchReportData();
+              }}
+              className="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-3 text-base font-semibold text-black focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="orders">Live Orders{activeOrdersCount > 0 ? ` (${activeOrdersCount})` : ''}</option>
+              <option value="menu">Menu Dishes</option>
+              <option value="categories">Categories</option>
+              <option value="banners">Offer Reels</option>
+              <option value="staff">Staff</option>
+              <option value="tables">Tables &amp; Room QR</option>
+              <option value="logs">Activity Logs</option>
+              <option value="report">Reports</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="hidden md:flex max-w-7xl mx-auto px-4 md:px-6 items-center gap-2 overflow-x-auto no-scrollbar pt-1.5 pb-3">
           <button
             onClick={() => setActiveTab('orders')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-semibold transition-all shrink-0 cursor-pointer ${
@@ -974,11 +1742,10 @@ export default function DashboardClient({ session }: Props) {
             </span>
           </button>
 
-          {/* Admin Only Tab: Activity Logs */}
           <button
             onClick={() => {
               setActiveTab('logs');
-              fetchLogs();
+              fetchReportData();
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-semibold transition-all shrink-0 cursor-pointer ${
               activeTab === 'logs'
@@ -987,34 +1754,29 @@ export default function DashboardClient({ session }: Props) {
             }`}
           >
             <span>Activity Logs</span>
-            <span className="bg-emerald-100 text-black text-sm font-semibold px-2 py-0.5 rounded-full">
-              {logsList.length}
+            <span className="bg-purple-100 text-purple-900 text-sm font-semibold px-2 py-0.5 rounded-full">
+              {reportData.logs.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('report');
+              fetchReportData();
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-semibold transition-all shrink-0 cursor-pointer ${
+              activeTab === 'report'
+                ? 'bg-black text-white shadow-xs'
+                : 'bg-gray-100 text-black hover:bg-gray-200'
+            }`}
+          >
+            <span>Reports</span>
+            <span className="bg-sky-100 text-black text-sm font-semibold px-2 py-0.5 rounded-full">
+              PDF / CSV
             </span>
           </button>
         </div>
       </header>
-
-      {/* Metric Highlights Banner */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
-            <p className="text-base font-medium text-black">Active Orders</p>
-            <p className="text-3xl sm:text-4xl font-bold text-black mt-1">{activeOrdersCount}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
-            <p className="text-base font-medium text-black">Sales Today</p>
-            <p className="text-3xl sm:text-4xl font-bold text-black mt-1">₹{todayRevenue.toFixed(0)}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
-            <p className="text-base font-medium text-black">Dining Tables</p>
-            <p className="text-3xl sm:text-4xl font-bold text-black mt-1">{tables.length}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
-            <p className="text-base font-medium text-black">Hotel Rooms</p>
-            <p className="text-3xl sm:text-4xl font-bold text-black mt-1">{rooms.length}</p>
-          </div>
-        </div>
-      </div>
 
       {/* ─── Main Content Tabs ─── */}
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5">
@@ -1023,33 +1785,47 @@ export default function DashboardClient({ session }: Props) {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                {(['active', 'all', 'new', 'preparing', 'ready', 'completed'] as const).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setOrderFilter(st)}
-                    className={`px-4 py-2 rounded-xl text-base font-semibold capitalize transition-all shrink-0 cursor-pointer ${
-                      orderFilter === st
-                        ? 'bg-black text-white shadow-2xs'
-                        : 'bg-gray-100 text-black hover:bg-gray-200'
-                    }`}
-                  >
-                    {st === 'active' ? 'Active Orders' : st}
-                  </button>
-                ))}
+                {(['active', 'all', 'new', 'preparing', 'ready', 'completed'] as const).map((st) => {
+                  const count =
+                    st === 'all'
+                      ? orders.length
+                      : st === 'active'
+                      ? activeOrdersCount
+                      : orders.filter((o) => o.status === st).length;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => setOrderFilter(st)}
+                      className={`px-4 py-2 rounded-xl text-base font-semibold capitalize transition-all shrink-0 cursor-pointer ${
+                        orderFilter === st
+                          ? 'bg-black text-white shadow-2xs'
+                          : 'bg-gray-100 text-black hover:bg-gray-200'
+                      }`}
+                    >
+                      {st === 'active' ? `Active Orders (${count})` : `${st} (${count})`}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 {(['all', 'table', 'room', 'home'] as const).map((tp) => (
                   <button
                     key={tp}
                     onClick={() => setTypeFilter(tp)}
-                    className={`px-3.5 py-2 rounded-xl text-base font-semibold capitalize transition-all cursor-pointer ${
+                    className={`px-3.5 py-2 rounded-xl text-base font-semibold capitalize transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                       typeFilter === tp
-                        ? 'bg-[#05C12F] text-white'
+                        ? 'bg-[#05C12F] text-white shadow-2xs'
                         : 'bg-gray-100 text-black hover:bg-gray-200'
                     }`}
                   >
-                    {tp === 'all' ? 'All Types' : tp === 'home' ? 'Takeaway' : tp === 'room' ? 'Rooms' : 'Tables'}
+                    {tp === 'all'
+                      ? `All Types (${countsByType.all})`
+                      : tp === 'home'
+                      ? `🛍️ Takeaway (${countsByType.home})`
+                      : tp === 'room'
+                      ? `🏨 Rooms (${countsByType.room})`
+                      : `🍽️ Tables (${countsByType.table})`}
                   </button>
                 ))}
               </div>
@@ -1060,22 +1836,26 @@ export default function DashboardClient({ session }: Props) {
                 <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                 </div>
-                <h3 className="text-lg font-normal text-gray-800">No Orders in this view</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {typeFilter !== 'all'
+                    ? `No ${orderFilter === 'active' ? 'active' : orderFilter} orders for ${typeFilter === 'home' ? 'Takeaway' : typeFilter === 'room' ? 'Rooms' : 'Tables'}`
+                    : 'No Orders in this view'}
+                </h3>
+                {orderFilter !== 'all' && totalCountsByType[typeFilter] > 0 && (
+                  <button
+                    onClick={() => setOrderFilter('all')}
+                    className="mt-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200 cursor-pointer"
+                  >
+                    View past / completed {typeFilter === 'home' ? 'Takeaway' : typeFilter === 'room' ? 'Rooms' : 'Tables'} orders ({totalCountsByType[typeFilter]})
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredOrders.map((order) => {
                   const badge = STATUS_BADGES[order.status] || STATUS_BADGES.new;
-                  const locationName =
-                    order.tables?.table_number
-                      ? `Table ${order.tables.table_number}`
-                      : order.rooms?.room_number
-                      ? `Room ${order.rooms.room_number}`
-                      : order.customer_name
-                      ? order.customer_name
-                      : order.order_type === 'home'
-                      ? 'Takeaway'
-                      : 'Direct Order';
+                  const channelInfo = getOrderChannelInfo(order);
+                  const locationLink = getOrderLocationLink(order);
 
                   const bundleItems = order.order_items || [];
                   const totalItemsCount = bundleItems.reduce((s, i) => s + i.quantity, 0);
@@ -1088,17 +1868,20 @@ export default function DashboardClient({ session }: Props) {
                       <div>
                         <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
                           <div>
-                            <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-2.5 flex-wrap">
                               <span className="text-2xl font-semibold text-black">
                                 #{order.order_number}
                               </span>
-                              <span className="text-base font-semibold bg-emerald-50 text-black px-3 py-0.5 rounded-lg border border-emerald-300">
-                                {order.rooms?.room_number ? 'Room' : 'Table'} {locationName}
+                              <span className={`text-base font-semibold px-3 py-0.5 rounded-lg border flex items-center gap-1.5 ${channelInfo.badgeClass}`}>
+                                <span>{channelInfo.icon}</span>
+                                <span>{channelInfo.badgeLabel}</span>
                               </span>
                             </div>
                             <p className="text-base font-normal text-black mt-1">
-                              {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &bull;{' '}
-                              <span className="font-medium">{order.customer_name}</span>
+                              {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {order.customer_name && order.customer_name !== 'Dine-in Guest' && order.customer_name !== 'Table Customer' && (
+                                <> &bull; <span className="font-semibold">{order.customer_name}</span></>
+                              )}
                             </p>
                           </div>
 
@@ -1146,6 +1929,18 @@ export default function DashboardClient({ session }: Props) {
                               +91 {order.customer_phone}
                             </a>
                           </div>
+                        )}
+
+                        {locationLink && (
+                          <a
+                            href={locationLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2.5 inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-base font-semibold text-blue-800 transition-colors hover:bg-blue-100"
+                          >
+                            <span>📍</span>
+                            <span>Location</span>
+                          </a>
                         )}
                       </div>
 
@@ -1749,16 +2544,13 @@ export default function DashboardClient({ session }: Props) {
           </div>
         )}
 
-        {/* ─── TAB: ACTIVITY LOGS (ADMIN ONLY) ─── */}
+        {/* ─── TAB: ACTIVITY LOGS ─── */}
         {activeTab === 'logs' && (
           <div className="space-y-5">
-            {/* Top Toolbar */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-semibold text-black">
-                    System &amp; Activity Logs
-                  </h2>
+                  <h2 className="text-2xl font-semibold text-black">System &amp; Activity Logs</h2>
                   <span className="text-base font-semibold bg-purple-100 text-purple-900 border border-purple-300 px-3 py-0.5 rounded-full">
                     Admin Only
                   </span>
@@ -1767,62 +2559,61 @@ export default function DashboardClient({ session }: Props) {
                   Audit trail of staff logins, order events, staff updates, and administrative notes
                 </p>
               </div>
-
               <div className="flex items-center gap-2.5 w-full sm:w-auto">
                 <Button
-                  onClick={fetchLogs}
-                  disabled={logsLoading}
+                  onClick={fetchReportData}
+                  disabled={reportLoading}
                   variant="outline"
                   className="text-base font-semibold border-gray-300 text-black hover:bg-gray-100 cursor-pointer py-2.5 px-4 rounded-xl"
                 >
-                  {logsLoading ? 'Refreshing...' : '🔄 Refresh'}
+                  {reportLoading ? 'Refreshing...' : 'Refresh'}
                 </Button>
                 <Button
                   onClick={() => setIsAddLogOpen(true)}
-                  className="bg-[#05C12F] hover:bg-[#04A328] text-white text-base font-semibold px-5 py-2.5 rounded-xl cursor-pointer flex items-center gap-2 shadow-sm"
+                  className="bg-[#05C12F] hover:bg-[#04A328] text-white text-base font-semibold px-5 py-2.5 rounded-xl cursor-pointer shadow-sm"
                 >
-                  <span>+ Create Log Entry</span>
+                  + Create Log Entry
                 </Button>
               </div>
             </div>
 
-            {/* Level Filter Bar */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-              {(['all', 'info', 'success', 'warning', 'error'] as const).map((lvl) => (
-                <button
-                  key={lvl}
-                  onClick={() => {
-                    setLogLevelFilter(lvl);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-base font-medium capitalize transition-all cursor-pointer ${
-                    logLevelFilter === lvl
-                      ? 'bg-black text-white shadow-xs'
-                      : 'bg-white text-black hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  {lvl === 'all' ? `All Events (${logsList.length})` : lvl}
-                </button>
-              ))}
+              {(['all', 'info', 'success', 'warning', 'error'] as const).map((lvl) => {
+                const count = lvl === 'all'
+                  ? reportData.logs.length
+                  : reportData.logs.filter((log) => log.level === lvl).length;
+                return (
+                  <button
+                    key={lvl}
+                    onClick={() => setActivityLogLevel(lvl)}
+                    className={`px-4 py-2 rounded-xl text-base font-medium capitalize transition-all cursor-pointer shrink-0 ${
+                      activityLogLevel === lvl
+                        ? 'bg-black text-white shadow-xs'
+                        : 'bg-white text-black hover:bg-gray-100 border border-gray-300'
+                    }`}
+                  >
+                    {lvl === 'all' ? `All Events (${count})` : `${lvl} (${count})`}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Logs List Table */}
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
-              {logsList.length === 0 ? (
+              {filteredActivityLogs.length === 0 ? (
                 <div className="p-12 text-center text-black">
-                  <p className="text-4xl mb-2">📋</p>
                   <p className="text-xl font-semibold text-black">No log entries found</p>
                   <p className="text-base text-black mt-1">Log events will appear as staff login and manage the portal.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {logsList.map((log) => {
-                    const levelColors: Record<string, { badge: string; icon: string }> = {
-                      success: { badge: 'bg-emerald-50 text-black border-emerald-300', icon: '🟢' },
-                      warning: { badge: 'bg-amber-50 text-black border-amber-300', icon: '🟡' },
-                      error: { badge: 'bg-red-50 text-red-900 border-red-300', icon: '🔴' },
-                      info: { badge: 'bg-blue-50 text-black border-blue-300', icon: '🔵' },
+                  {filteredActivityLogs.map((log) => {
+                    const levelStyles: Record<string, string> = {
+                      success: 'bg-emerald-50 text-emerald-900 border-emerald-300',
+                      warning: 'bg-amber-50 text-amber-900 border-amber-300',
+                      error: 'bg-red-50 text-red-900 border-red-300',
+                      info: 'bg-blue-50 text-blue-900 border-blue-300',
                     };
-                    const color = levelColors[log.level] || levelColors.info;
+                    const badge = levelStyles[log.level] || levelStyles.info;
                     const dateFormatted = new Date(log.created_at).toLocaleString('en-IN', {
                       day: '2-digit',
                       month: 'short',
@@ -1833,37 +2624,388 @@ export default function DashboardClient({ session }: Props) {
                     });
 
                     return (
-                      <div key={log.id} className="p-4 sm:p-5 hover:bg-gray-50/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-start gap-3.5 min-w-0">
-                          <span className="text-2xl shrink-0 mt-0.5">{color.icon}</span>
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <span className="font-semibold text-lg text-black">
-                                {log.action}
-                              </span>
-                              <span className={`text-sm px-2.5 py-0.5 rounded-full border uppercase font-semibold ${color.badge}`}>
-                                {log.level}
-                              </span>
-                              {log.metadata?.manual_entry && (
-                                <span className="text-sm bg-purple-50 text-purple-900 border border-purple-300 px-2 py-0.5 rounded-full font-medium">
-                                  Manual Note
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-base text-black font-normal leading-relaxed">
-                              {log.details}
-                            </p>
-                            <div className="flex items-center gap-3 mt-1.5 text-base text-black font-medium">
-                              <span>Actor: <strong className="text-black font-semibold">{log.actor_name}</strong> ({log.actor_role})</span>
-                              <span>&bull;</span>
-                              <span className="font-normal">{dateFormatted}</span>
-                            </div>
-                          </div>
+                      <div key={log.id} className="p-4 sm:p-5 hover:bg-gray-50/60 transition-colors">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="font-semibold text-lg text-black">{log.action}</span>
+                          <span className={`text-sm px-2.5 py-0.5 rounded-full border uppercase font-semibold ${badge}`}>
+                            {log.level}
+                          </span>
+                          {log.metadata?.manual_entry && (
+                            <span className="text-sm bg-purple-50 text-purple-900 border border-purple-300 px-2 py-0.5 rounded-full font-medium">
+                              Manual Note
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-base text-black font-normal leading-relaxed">{log.details}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5 text-base text-black font-medium">
+                          <span>
+                            Actor: <strong className="text-black font-semibold">{log.actor_name}</strong> ({log.actor_role})
+                          </span>
+                          <span>&bull;</span>
+                          <span className="font-normal">{dateFormatted}</span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ─── TAB: REPORTS ─── */}
+        {activeTab === 'report' && (
+          <div className="space-y-5">
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-2xs space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-semibold text-black">Reports &amp; Exports</h2>
+                    <span className="text-base font-semibold bg-sky-100 text-sky-900 border border-sky-300 px-3 py-0.5 rounded-full">
+                      Admin Only
+                    </span>
+                  </div>
+                  <p className="text-base font-normal text-black mt-1">
+                    Filter records, preview the result, and download a CSV or PDF report.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    onClick={fetchReportData}
+                    disabled={reportLoading}
+                    variant="outline"
+                    className="text-base font-semibold border-gray-300 text-black hover:bg-gray-100 cursor-pointer py-2.5 px-4 rounded-xl"
+                  >
+                    {reportLoading ? 'Loading...' : '🔄 Refresh'}
+                  </Button>
+                  {reportType === 'logs' && (
+                    <Button
+                      onClick={() => setIsAddLogOpen(true)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white text-base font-semibold px-4 py-2.5 rounded-xl cursor-pointer"
+                    >
+                      + Create Log Entry
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => downloadReportCsv(reportTable)}
+                    className="bg-black hover:bg-gray-800 text-white text-base font-semibold px-4 py-2.5 rounded-xl cursor-pointer"
+                  >
+                    ⬇ Download CSV
+                  </Button>
+                  <Button
+                    onClick={() => openReportPdf(reportTable, reportFilterSummary)}
+                    className="bg-[#05C12F] hover:bg-[#04A328] text-white text-base font-semibold px-4 py-2.5 rounded-xl cursor-pointer"
+                  >
+                    📄 Download PDF
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Report Type</span>
+                  <select
+                    value={reportType}
+                    onChange={(event) => setReportType(event.target.value as ReportType)}
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    {REPORT_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {(reportType === 'orders' || reportType === 'sales' || reportType === 'logs') && (
+                  <>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">From date</span>
+                      <input
+                        type="date"
+                        value={reportFrom}
+                        onChange={(event) => setReportFrom(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">To date</span>
+                      <input
+                        type="date"
+                        value={reportTo}
+                        onChange={(event) => setReportTo(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </label>
+                  </>
+                )}
+
+                <label className="flex flex-col gap-1 sm:col-span-2">
+                  <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Search</span>
+                  <input
+                    type="text"
+                    value={reportSearch}
+                    onChange={(event) => setReportSearch(event.target.value)}
+                    placeholder="Order #, customer, phone, item, staff, table, log..."
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </label>
+
+                {(reportType === 'orders' || reportType === 'sales') && (
+                  <>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Order type</span>
+                      <select
+                        value={reportOrderType}
+                        onChange={(event) =>
+                          setReportOrderType(event.target.value as 'all' | 'table' | 'room' | 'home')
+                        }
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">All types</option>
+                        <option value="table">Table</option>
+                        <option value="room">Room</option>
+                        <option value="home">Takeaway / Home</option>
+                      </select>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Order status</span>
+                      <select
+                        value={reportOrderStatus}
+                        onChange={(event) => setReportOrderStatus(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">All statuses</option>
+                        {REPORT_ORDER_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Payment</span>
+                      <select
+                        value={reportPayment}
+                        onChange={(event) => setReportPayment(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">All payments</option>
+                        {REPORT_PAYMENT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                {reportType === 'menu' && (
+                  <>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Category</span>
+                      <select
+                        value={reportMenuCategory}
+                        onChange={(event) => setReportMenuCategory(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">All categories</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Veg type</span>
+                      <select
+                        value={reportVegType}
+                        onChange={(event) => setReportVegType(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">All types</option>
+                        <option value="veg">Veg</option>
+                        <option value="non_veg">Non-veg</option>
+                        <option value="egg">Egg</option>
+                      </select>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Availability</span>
+                      <select
+                        value={reportAvailability}
+                        onChange={(event) => setReportAvailability(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">All items</option>
+                        <option value="available">Available</option>
+                        <option value="unavailable">Unavailable</option>
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                {reportType === 'staff' && (
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Role</span>
+                    <select
+                      value={reportStaffRole}
+                      onChange={(event) => setReportStaffRole(event.target.value)}
+                      className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="all">All roles</option>
+                      <option value="owner">Owner</option>
+                      <option value="manager">Manager</option>
+                      <option value="kitchen">Kitchen</option>
+                      <option value="staff">Staff</option>
+                    </select>
+                  </label>
+                )}
+
+                {reportType === 'tables' && (
+                  <>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Asset type</span>
+                      <select
+                        value={reportAssetType}
+                        onChange={(event) =>
+                          setReportAssetType(event.target.value as 'all' | 'table' | 'room')
+                        }
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">Tables &amp; rooms</option>
+                        <option value="table">Tables only</option>
+                        <option value="room">Rooms only</option>
+                      </select>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Status</span>
+                      <select
+                        value={reportAssetStatus}
+                        onChange={(event) => setReportAssetStatus(event.target.value)}
+                        className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="all">All statuses</option>
+                        {reportAssetStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                {reportType === 'logs' && (
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">Log level</span>
+                    <select
+                      value={reportLogLevel}
+                      onChange={(event) => setReportLogLevel(event.target.value)}
+                      className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-base font-medium text-black focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="all">All levels</option>
+                      <option value="info">Info</option>
+                      <option value="success">Success</option>
+                      <option value="warning">Warning</option>
+                      <option value="error">Error</option>
+                    </select>
+                  </label>
+                )}
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={handleResetReportFilters}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-black text-base font-semibold px-4 py-2.5 rounded-xl border border-gray-300 transition-colors cursor-pointer"
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {reportTable.summary.map((item) => (
+                <div
+                  key={item.label}
+                  className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs"
+                >
+                  <p className="text-base font-medium text-black">{item.label}</p>
+                  <p className="text-2xl font-bold text-black mt-1">{item.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-4 border-b border-gray-200">
+                <div>
+                  <h3 className="text-xl font-semibold text-black">{reportTable.title}</h3>
+                  <p className="text-base font-normal text-black mt-0.5">
+                    {reportTable.rows.length} records found
+                  </p>
+                </div>
+                <p className="text-sm font-medium text-gray-600">
+                  Preview shows first 200 rows. Exports include every filtered record.
+                </p>
+              </div>
+
+              {reportLoading ? (
+                <div className="p-12 text-center text-black">
+                  <p className="text-xl font-semibold">Loading report data...</p>
+                </div>
+              ) : reportTable.rows.length === 0 ? (
+                <div className="p-12 text-center text-black">
+                  <p className="text-4xl mb-2">📊</p>
+                  <p className="text-xl font-semibold">No records match these filters</p>
+                  <p className="text-base mt-1">Adjust the report type, date range, or search terms.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-base">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          {reportTable.columns.map((column) => (
+                            <th
+                              key={column.label}
+                              className="px-4 py-3 text-sm font-semibold uppercase tracking-wide text-gray-700 whitespace-nowrap"
+                            >
+                              {column.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {reportTable.rows.slice(0, 200).map((row, rowIndex) => (
+                          <tr key={rowIndex} className="hover:bg-gray-50/70">
+                            {row.map((cell, cellIndex) => (
+                              <td
+                                key={cellIndex}
+                                className="px-4 py-2.5 text-base font-normal text-black align-top"
+                              >
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {reportTable.rows.length > 200 && (
+                    <p className="px-5 py-3 text-sm font-medium text-gray-600 border-t border-gray-200 bg-gray-50">
+                      Showing the first 200 of {reportTable.rows.length} records. Download CSV or PDF
+                      to get the complete report.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>

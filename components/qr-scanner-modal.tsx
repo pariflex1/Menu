@@ -80,10 +80,10 @@ export default function QRScannerModal({ isOpen, onClose, onSuccess, required = 
 
     // Clean token if a full URL was scanned (e.g. https://.../q?t=T01-XYZ789)
     let cleanToken = token.trim();
-    if (cleanToken.includes('?t=')) {
+    if (cleanToken.includes('?t=') || cleanToken.includes('?token=')) {
       try {
         const url = new URL(cleanToken, window.location.origin);
-        cleanToken = url.searchParams.get('t') || cleanToken;
+        cleanToken = url.searchParams.get('t') || url.searchParams.get('token') || cleanToken;
       } catch { /* not a valid URL */ }
     }
 

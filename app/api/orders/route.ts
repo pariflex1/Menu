@@ -153,15 +153,10 @@ export async function POST(request: Request) {
       .from('customer_addresses')
       .insert({
         customer_id: resolvedCustomerId,
-        label: 'Other',
-        name: customer_name,
-        phone,
-        address_line_1: customer_location.trim(),
+        address_line1: customer_location.trim(),
         city: 'Vrindavan',
         state: 'Uttar Pradesh',
         pincode: '281121',
-        latitude: customer_latitude ?? null,
-        longitude: customer_longitude ?? null,
       })
       .select('id')
       .single();
@@ -366,6 +361,14 @@ export async function POST(request: Request) {
     roomNumber = rm?.room_number || null;
   }
 
+  const mapsQuery =
+    customer_latitude != null && customer_longitude != null
+      ? `${customer_latitude},${customer_longitude}`
+      : customer_location?.trim() || null;
+  const locationLink = mapsQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
+    : null;
+
   // Send WhatsApp notification alert to management asynchronously
   sendNewOrderAlertToManagement({
     orderId: order.id,
@@ -375,6 +378,7 @@ export async function POST(request: Request) {
     orderType: order_type,
     tableName: tableName,
     roomNumber: roomNumber,
+    locationLink: order_type === 'home' ? locationLink : null,
     items: orderItems.map((item) => ({
       name: item.item_name,
       quantity: item.quantity,
